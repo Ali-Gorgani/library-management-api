@@ -33,3 +33,18 @@ func BorrowBook(w http.ResponseWriter, r *http.Request) {
 func ReturnBook(w http.ResponseWriter, r *http.Request) {
     w.Write([]byte("A book has been returned"))
 }
+
+// SearchBooks handles GET requests for searching books
+func SearchBooks(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("Here are the search results"))
+}
+
+// CategoryBooks handles GET requests for retrieving book categories
+func CategoryBooks(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("Here are the categories"))
+}
+
+// AvailabilityBooks handles GET requests for retrieving available books
+func AvailabilityBooks(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("Here are the available books"))
+}

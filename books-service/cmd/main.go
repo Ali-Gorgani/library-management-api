@@ -37,6 +37,9 @@ func run() error {
 	r.Delete("/books/{id}", handlers.DeleteBook)      // Delete book by ID
 	r.Post("/books/{id}/borrow", handlers.BorrowBook) // Borrow book by ID
 	r.Post("/books/{id}/return", handlers.ReturnBook) // Return book by ID
+	r.Get("/books/search", handlers.SearchBooks)      // Search books
+	r.Get("/books/categories", handlers.CategoryBooks) // Get book categories
+	r.Get("/books/available", handlers.AvailabilityBooks) // Get available books
 
 	log.Println("Starting Books Service on :8082")
 	http.ListenAndServe(":8082", r)
