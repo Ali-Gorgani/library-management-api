@@ -1,0 +1,83 @@
+services:
+  # API Gateway Service
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: on-failure
+    networks:
+      - library-network
+    depends_on:
+      - books-service
+      - users-service
+    ports:
+      - "8080:8080"
+
+  # Books Service
+  books-service:
+    build:
+      context: ./books-service
+      dockerfile: Dockerfile
+    container_name: books-service
+    restart: on-failure
+    networks:
+      - library-network
+    depends_on:
+      - books-db
+    ports:
+      - "8081:8081"
+
+  # Users Service
+  users-service:
+    build:
+      context: ./users-service
+      dockerfile: Dockerfile
+    container_name: users-service
+    restart: on-failure
+    networks:
+      - library-network
+    depends_on:
+      - users-db
+    ports:
+      - "8082:8082"
+
+  # Database for Books Service
+  books-db:
+    image: postgres:alpine
+    container_name: books-db
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: library_books_db
+    # volumes:
+    #   - books-db-data:/var/lib/postgresql/data
+    restart: on-failure
+    networks:
+      - library-network
+    ports:
+      - "5433:5432"
+
+  # Database for Users Service
+  users-db:
+    image: postgres:alpine
+    container_name: users-db
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: library_users_db
+    # volumes:
+    #   - users-db-data:/var/lib/postgresql/data
+    restart: on-failure
+    networks:
+      - library-network
+    ports:
+      - "5434:5432"
+
+networks:
+  library-network:
+    driver: bridge
+
+# volumes:
+#   books-db-data:
+#   users-db-data:
