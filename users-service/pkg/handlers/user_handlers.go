@@ -4,12 +4,27 @@ import (
     "net/http"
 )
 
-// GetUsers handles GET requests for retrieving all users
-func GetUsers(w http.ResponseWriter, r *http.Request) {
-    w.Write([]byte("Here are all the users"))
+// GetUser handles GET requests for retrieving a user
+func GetUser(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("Here is the user"))
 }
 
-// RegisterUser handles POST requests for registering a new user
-func RegisterUser(w http.ResponseWriter, r *http.Request) {
-    w.Write([]byte("A new user has been registered"))
+// Signup handles POST requests for creating a new user
+func Signup(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("A new user has been created"))
+}
+
+// Login handles POST requests for logging in a user
+func Login(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("A user has been logged in"))
+}
+
+// UpdateUser handles PUT requests for updating a user
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("A user has been updated"))
+}
+
+// DeleteUser handles DELETE requests for deleting a user
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("A user has been deleted"))
 }

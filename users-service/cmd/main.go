@@ -31,7 +31,11 @@ func run() error {
 	}
 
 	r := chi.NewRouter()
-	r.Get("/users/{id}", handlers.GetUsers) // Get user by ID
+	r.Get("/users/{id}", handlers.GetUser)       // Get user by ID
+	r.Post("/users/signup", handlers.Signup)     // Create user
+	r.Post("/users/login", handlers.Login)       // Login user
+	r.Put("/users/{id}", handlers.UpdateUser)    // Update user by ID
+	r.Delete("/users/{id}", handlers.DeleteUser) // Delete user by ID
 
 	log.Println("Starting Users Service on :8081")
 	http.ListenAndServe(":8081", r)

@@ -31,8 +31,12 @@ func run() error {
 	}
 
 	r := chi.NewRouter()
-	r.Post("/books", handlers.AddBook) // Create book
-	r.Get("/books", handlers.GetBooks) // Get book by ID
+	r.Post("/books", handlers.AddBook)                // Create book
+	r.Get("/books", handlers.GetBooks)                // Get book by ID
+	r.Put("/books/{id}", handlers.UpdateBook)         // Update book by ID
+	r.Delete("/books/{id}", handlers.DeleteBook)      // Delete book by ID
+	r.Post("/books/{id}/borrow", handlers.BorrowBook) // Borrow book by ID
+	r.Post("/books/{id}/return", handlers.ReturnBook) // Return book by ID
 
 	log.Println("Starting Books Service on :8082")
 	http.ListenAndServe(":8082", r)
