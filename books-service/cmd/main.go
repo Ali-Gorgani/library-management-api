@@ -1,9 +1,9 @@
 package main
 
 import (
-	"books-service/migrations"
-	"books-service/pkg/database"
-	"books-service/pkg/handlers"
+	"library-management-api/books-service/core/usecase"
+	"library-management-api/books-service/init/database"
+	"library-management-api/books-service/init/migrations"
 	"log"
 	"net/http"
 
@@ -17,29 +17,29 @@ func main() {
 	}
 }
 
-func run() error {
-	// Setup the database
-	db, err := database.Open(database.DefaultPostgresConfig())
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+func init() {
+	database.Open(database.DefaultPostgresConfig())
+}
 
-	err = database.MigrateFS(db, migrations.FS, ".")
+func run() error {
+	db := database.P().DB
+	err := database.MigrateFS(db, migrations.FS, ".")
 	if err != nil {
 		return err
 	}
+
+	buc := usecase.NewBookUseCase()
 
 	r := chi.NewRouter()
-	r.Post("/books", handlers.AddBook)                // Create book
-	r.Get("/books", handlers.GetBooks)                // Get book by ID
-	r.Put("/books/{id}", handlers.UpdateBook)         // Update book by ID
-	r.Delete("/books/{id}", handlers.DeleteBook)      // Delete book by ID
-	r.Post("/books/{id}/borrow", handlers.BorrowBook) // Borrow book by ID
-	r.Post("/books/{id}/return", handlers.ReturnBook) // Return book by ID
-	r.Get("/books/search", handlers.SearchBooks)      // Search books
-	r.Get("/books/categories", handlers.CategoryBooks) // Get book categories
-	r.Get("/books/available", handlers.AvailabilityBooks) // Get available books
+	r.Post("/books", buc.AddBook)
+	r.Get("/books", buc.GetBooks)
+	r.Put("/books/{id}", buc.UpdateBook)
+	r.Delete("/books/{id}", buc.DeleteBook)
+	r.Post("/books/{id}/borrow", buc.BorrowBook)
+	r.Post("/books/{id}/return", buc.ReturnBook)
+	r.Get("/books/search", buc.SearchBooks)
+	r.Get("/books/category/{category}", buc.CategoryBooks)
+	r.Get("/books/available", buc.AvailableBooks)
 
 	log.Println("Starting Books Service on :8082")
 	http.ListenAndServe(":8082", r)

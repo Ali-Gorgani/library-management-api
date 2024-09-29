@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/fs"
+	"log"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/pressly/goose/v3"
@@ -20,11 +21,11 @@ type PostgresConfig struct {
 
 func DefaultPostgresConfig() PostgresConfig {
 	return PostgresConfig{
-		Host:     "users-db",
+		Host:     "books-db",
 		Port:     "5432",
 		User:     "root",
 		Password: "secret",
-		Database: "library_users_db",
+		Database: "library_books_db",
 		SSLMode:  "disable",
 	}
 }
@@ -35,20 +36,30 @@ func (cfg PostgresConfig) String() string {
 	)
 }
 
+type postgres struct {
+	DB *sql.DB
+}
+
+var p *postgres
+
+func P() *postgres {
+	return p
+}
+
 // Open opens a database connection using the provided PostgresConfig.
 // It attempts to establish a connection and verify it with a ping.
 // Caller must ensure that the connection is closed via db.Close() method.
-func Open(cfg PostgresConfig) (*sql.DB, error) {
-	db, err := sql.Open("pgx", cfg.String())
+func Open(cfg PostgresConfig) {
+	var err error
+	p.DB, err = sql.Open("pgx", cfg.String())
 	if err != nil {
-		return nil, fmt.Errorf("Open: %w", err)
+		log.Fatalf("Open: %v", err)
 	}
-	err = db.Ping()
+	err = p.DB.Ping()
 	if err != nil {
-		return nil, fmt.Errorf("Open: ping failed: %w", err)
+		log.Fatalf("Open: ping failed: %v", err)
 	}
 	fmt.Println("Database connected!")
-	return db, nil
 }
 
 func Migrate(db *sql.DB, dir string) error {
