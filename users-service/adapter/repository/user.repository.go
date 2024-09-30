@@ -7,9 +7,7 @@ import (
 	"library-management-api/users-service/core/domain"
 	"library-management-api/users-service/core/ports"
 	"library-management-api/users-service/init/database"
-	"log"
-
-	"golang.org/x/crypto/bcrypt"
+	"library-management-api/users-service/pkg/util"
 )
 
 type UserRepository struct {
@@ -24,11 +22,11 @@ func NewUserRepository() ports.UserRepository {
 
 // AddUser implements ports.UserRepository.
 func (u UserRepository) AddUser(ctx context.Context, user domain.AddUserParam) (domain.User, error) {
-	hashedPassword := HashedPassword(user.Password)
+	hashedPassword := util.HashedPassword(user.Password)
 	var addedUser domain.User
-	query := "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *"
+	query := "INSERT INTO users (username, email, hashed_password) VALUES ($1, $2, $3) RETURNING *"
 	row := u.db.QueryRow(query, user.Username, user.Email, hashedPassword)
-	err := row.Scan(&addedUser.ID, &addedUser.Username, &addedUser.Email, &addedUser.HashedPassword, &addedUser.CreatedAt)
+	err := row.Scan(&addedUser.ID, &addedUser.Username, &addedUser.Email, &addedUser.HashedPassword, &addedUser.Role, &addedUser.CreatedAt)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -46,7 +44,7 @@ func (u UserRepository) GetUsers(ctx context.Context) ([]domain.User, error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.HashedPassword, &user.CreatedAt)
+		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.HashedPassword, &user.Role, &user.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -60,7 +58,7 @@ func (u UserRepository) GetUser(ctx context.Context, id int) (domain.User, error
 	var user domain.User
 	query := "SELECT * FROM users WHERE id=$1"
 	row := u.db.QueryRow(query, id)
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.HashedPassword, &user.CreatedAt)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.HashedPassword, &user.Role, &user.CreatedAt)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -70,9 +68,10 @@ func (u UserRepository) GetUser(ctx context.Context, id int) (domain.User, error
 // UpdateUser implements ports.UserRepository.
 func (u UserRepository) UpdateUser(ctx context.Context, id int, user domain.UpdateUserParam) (domain.User, error) {
 	var updatedUser domain.User
-	query := "UPDATE users SET username=$1, email=$2, password=$3 WHERE id=$4 RETURNING *"
-	row := u.db.QueryRow(query, user.Username, user.Email, user.Password, id)
-	err := row.Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Email, &updatedUser.HashedPassword, &updatedUser.CreatedAt)
+	hashedPassword := util.HashedPassword(user.Password)
+	query := "UPDATE users SET username=$1, email=$2, hashed_password=$3, role=$4 WHERE id=$5 RETURNING *"
+	row := u.db.QueryRow(query, user.Username, user.Email, hashedPassword, user.Role, id)
+	err := row.Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Email, &updatedUser.HashedPassword, &updatedUser.Role, &updatedUser.CreatedAt)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -94,33 +93,14 @@ func (u UserRepository) Login(ctx context.Context, user domain.UserLoginParam) (
 	var loggedUser domain.User
 	query := "SELECT * FROM users WHERE username=$1"
 	row := u.db.QueryRow(query, user.Username)
-	err := row.Scan(&loggedUser.ID, &loggedUser.Username, &loggedUser.Email, &loggedUser.HashedPassword, &loggedUser.CreatedAt)
+	err := row.Scan(&loggedUser.ID, &loggedUser.Username, &loggedUser.Email, &loggedUser.HashedPassword, &loggedUser.Role, &loggedUser.CreatedAt)
 	if err != nil {
 		return domain.User{}, err
 	}
 
-	if !ComparePassword(loggedUser.HashedPassword, user.Password) {
+	if !util.ComparePassword(loggedUser.HashedPassword, user.Password) {
 		return domain.User{}, errors.New("invalid credentials")
 	}
 
 	return loggedUser, nil
-}
-
-// HashedPassword implements ports.UserRepository.
-func HashedPassword(password string) string {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Fatalf("Failed to hash password: %v", err)
-	}
-	return string(hashedPassword)
-}
-
-// ComparePassword implements ports.UserRepository.
-func ComparePassword(hashedPassword, password string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-	if err != nil {
-		log.Fatalf("Failed to compare password: %v", err)
-		return false
-	}
-	return true
 }

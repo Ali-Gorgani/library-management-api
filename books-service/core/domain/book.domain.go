@@ -7,8 +7,9 @@ type Book struct {
 	Category      string `json:"category"`
 	Subject       string `json:"subject"`
 	Genre         string `json:"genre"`
-	PublishedYear int    `json:"published_year"`
+	PublishedYear string `json:"published_year"`
 	Available     bool   `json:"available"`
+	BorrowerID    *int   `json:"borrower_id"`
 	CreatedAt     string `json:"created_at"`
 }
 
@@ -18,7 +19,7 @@ type AddBookParam struct {
 	Category      string `json:"category"`
 	Subject       string `json:"subject"`
 	Genre         string `json:"genre"`
-	PublishedYear int    `json:"published_year"`
+	PublishedYear string `json:"published_year"`
 }
 
 type UpdateBookParam struct {
@@ -27,6 +28,12 @@ type UpdateBookParam struct {
 	Category      string `json:"category"`
 	Subject       string `json:"subject"`
 	Genre         string `json:"genre"`
-	PublishedYear int    `json:"published_year"`
+	PublishedYear string `json:"published_year"`
 	Available     bool   `json:"available"`
+	BorrowerID    *int   `json:"borrower_id"`
+}
+
+type BorrowBookRequest struct {
+	BookID     int `json:"book_id"`
+	BorrowerID *int `json:"borrower_id"`
 }

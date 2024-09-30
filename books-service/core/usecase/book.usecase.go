@@ -1,19 +1,17 @@
 package usecase
 
 import (
-	"encoding/json"
 	"library-management-api/books-service/adapter/repository"
 	"library-management-api/books-service/core/domain"
 	"library-management-api/books-service/core/ports"
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/gin-gonic/gin"
 )
 
 type BookUsecase struct {
 	bookRepository ports.BookRepository
-	userService    ports.UserService
 }
 
 func NewBookUseCase() *BookUsecase {
@@ -22,193 +20,181 @@ func NewBookUseCase() *BookUsecase {
 	}
 }
 
-// GetBooks handles GET requests for retrieving all books
-func (u *BookUsecase) GetBooks(w http.ResponseWriter, r *http.Request) {
-	books, err := u.bookRepository.GetBooks(r.Context())
-	if err != nil {
-		http.Error(w, "Failed to get books", http.StatusInternalServerError)
-		return
-	}
-
-	if err := json.NewEncoder(w).Encode(books); err != nil {
-		http.Error(w, "Failed to encode books to JSON", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+// errorResponse returns error details in JSON format.
+func errorResponse(statusCode int, err error) gin.H {
+	return gin.H{"status": statusCode, "error": err.Error()}
 }
 
 // AddBook handles POST requests for adding a new book
-func (u *BookUsecase) AddBook(w http.ResponseWriter, r *http.Request) {
+func (u *BookUsecase) AddBook(c *gin.Context) {
 	var book domain.AddBookParam
-	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&book); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, err))
 		return
 	}
 
-	addedBook, err := u.bookRepository.AddBook(r.Context(), book)
+	addedBook, err := u.bookRepository.AddBook(c.Request.Context(), book)
 	if err != nil {
-		http.Error(w, "Failed to add book", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(addedBook); err != nil {
-		http.Error(w, "Failed to encode book to JSON", http.StatusInternalServerError)
+	c.JSON(http.StatusCreated, addedBook)
+}
+
+// GetBooks handles GET requests for retrieving all books
+func (u *BookUsecase) GetBooks(c *gin.Context) {
+	books, err := u.bookRepository.GetBooks(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	c.JSON(http.StatusOK, books)
 }
 
 // UpdateBook handles PUT requests for updating a book
-func (u *BookUsecase) UpdateBook(w http.ResponseWriter, r *http.Request) {
-	bookIDStr := chi.URLParam(r, "id")
+func (u *BookUsecase) UpdateBook(c *gin.Context) {
+	bookIDStr := c.Param("id")
 	bookID, err := strconv.Atoi(bookIDStr)
 	if err != nil {
-		http.Error(w, "Invalid book ID", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, err))
 		return
 	}
 
 	var book domain.UpdateBookParam
-	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&book); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, err))
 		return
 	}
 
-	updatedBook, err := u.bookRepository.UpdateBook(r.Context(), bookID, book)
+	updatedBook, err := u.bookRepository.UpdateBook(c.Request.Context(), bookID, book)
 	if err != nil {
-		http.Error(w, "Failed to update book", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(updatedBook); err != nil {
-		http.Error(w, "Failed to encode book to JSON", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, updatedBook)
 }
 
 // DeleteBook handles DELETE requests for deleting a book
-func (u *BookUsecase) DeleteBook(w http.ResponseWriter, r *http.Request) {
-	bookIDStr := chi.URLParam(r, "id")
+func (u *BookUsecase) DeleteBook(c *gin.Context) {
+	bookIDStr := c.Param("id")
 	bookID, err := strconv.Atoi(bookIDStr)
 	if err != nil {
-		http.Error(w, "Invalid book ID", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, err))
 		return
 	}
 
-	err = u.bookRepository.DeleteBook(r.Context(), bookID)
+	err = u.bookRepository.DeleteBook(c.Request.Context(), bookID)
 	if err != nil {
-		http.Error(w, "Failed to delete book", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, gin.H{"message": "Book deleted successfully"})
 }
 
 // BorrowBook handles POST requests for borrowing a book
-func (u *BookUsecase) BorrowBook(w http.ResponseWriter, r *http.Request) {
-	bookIDStr := chi.URLParam(r, "id")
-	bookID, err := strconv.Atoi(bookIDStr)
+func (u *BookUsecase) BorrowBook(c *gin.Context) {
+	var borrowBook domain.BorrowBookRequest
+
+	if err := c.ShouldBindJSON(&borrowBook); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, err))
+		return
+	}
+
+	borrowedBook, err := u.bookRepository.BorrowBook(c.Request.Context(), borrowBook)
 	if err != nil {
-		http.Error(w, "Invalid book ID", http.StatusBadRequest)
+		if err.Error() == "book not found" {
+			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, err))
+			return
+		} else if err.Error() == "book is already borrowed" {
+			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, err))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
 
-	borrowedBook, err := u.bookRepository.BorrowBook(r.Context(), bookID)
-	if err != nil {
-		http.Error(w, "Failed to borrow book", http.StatusInternalServerError)
-		return
-	}
-
-	if err := json.NewEncoder(w).Encode(borrowedBook); err != nil {
-		http.Error(w, "Failed to encode book to JSON", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, borrowedBook)
 }
 
 // ReturnBook handles POST requests for returning a book
-func (u *BookUsecase) ReturnBook(w http.ResponseWriter, r *http.Request) {
-	bookIDStr := chi.URLParam(r, "id")
-	bookID, err := strconv.Atoi(bookIDStr)
+func (u *BookUsecase) ReturnBook(c *gin.Context) {
+	var returnBook domain.BorrowBookRequest
+
+	if err := c.ShouldBindJSON(&returnBook); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, err))
+		return
+	}
+
+	returnedBook, err := u.bookRepository.ReturnBook(c.Request.Context(), returnBook)
 	if err != nil {
-		http.Error(w, "Invalid book ID", http.StatusBadRequest)
+		if err.Error() == "book not found" {
+			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, err))
+			return
+		} else if err.Error() == "book is already available" {
+			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, err))
+			return
+		} else if err.Error() == "borrower ID does not match" {
+			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, err))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
 
-	returnedBook, err := u.bookRepository.ReturnBook(r.Context(), bookID)
-	if err != nil {
-		http.Error(w, "Failed to return book", http.StatusInternalServerError)
-		return
-	}
-
-	if err := json.NewEncoder(w).Encode(returnedBook); err != nil {
-		http.Error(w, "Failed to encode book to JSON", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, returnedBook)
 }
 
 // SearchBooks handles GET requests for searching books
-func (u *BookUsecase) SearchBooks(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query().Get("query")
+func (u *BookUsecase) SearchBooks(c *gin.Context) {
+	query := c.Query("title")
 	if query == "" {
-		http.Error(w, "Invalid search query", http.StatusBadRequest)
+		query = c.Query("author")
+	}
+	if query == "" {
+		query = c.Query("category")
+	}
+	if query == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid search query"})
 		return
 	}
 
-	books, err := u.bookRepository.SearchBooks(r.Context(), query)
+	books, err := u.bookRepository.SearchBooks(c.Request.Context(), query)
 	if err != nil {
-		http.Error(w, "Failed to search books", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(books); err != nil {
-		http.Error(w, "Failed to encode books to JSON", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, books)
 }
 
 // CategoryBooks handles GET requests for retrieving book categories
-func (u *BookUsecase) CategoryBooks(w http.ResponseWriter, r *http.Request) {
-	category := chi.URLParam(r, "category")
+func (u *BookUsecase) CategoryBooks(c *gin.Context) {
+	category := c.Param("category")
 	if category == "" {
-		http.Error(w, "Invalid category", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category"})
 		return
 	}
 
-	books, err := u.bookRepository.CategoryBooks(r.Context(), category)
+	books, err := u.bookRepository.CategoryBooks(c.Request.Context(), category)
 	if err != nil {
-		http.Error(w, "Failed to get books by category", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(books); err != nil {
-		http.Error(w, "Failed to encode books to JSON", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, books)
 }
 
 // AvailableBooks handles GET requests for retrieving available books
-func (u *BookUsecase) AvailableBooks(w http.ResponseWriter, r *http.Request) {
-	books, err := u.bookRepository.AvailableBooks(r.Context())
+func (u *BookUsecase) AvailableBooks(c *gin.Context) {
+	books, err := u.bookRepository.AvailableBooks(c.Request.Context())
 	if err != nil {
-		http.Error(w, "Failed to get available books", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(books); err != nil {
-		http.Error(w, "Failed to encode books to JSON", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, books)
 }

@@ -9,7 +9,8 @@ CREATE TABLE books (
     genre VARCHAR(100) NOT NULL,
     published_year INT NOT NULL,
     available BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    borrower_id INT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 -- +goose StatementEnd
 

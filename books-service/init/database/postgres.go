@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"io/fs"
-	"log"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/pressly/goose/v3"
+	"github.com/rs/zerolog/log"
 )
 
 type PostgresConfig struct {
@@ -21,8 +21,8 @@ type PostgresConfig struct {
 
 func DefaultPostgresConfig() PostgresConfig {
 	return PostgresConfig{
-		Host:     "books-db",
-		Port:     "5432",
+		Host:     "localhost",
+		Port:     "5431",
 		User:     "root",
 		Password: "secret",
 		Database: "library_books_db",
@@ -51,15 +51,16 @@ func P() *postgres {
 // Caller must ensure that the connection is closed via db.Close() method.
 func Open(cfg PostgresConfig) {
 	var err error
+	p = &postgres{}
 	p.DB, err = sql.Open("pgx", cfg.String())
 	if err != nil {
-		log.Fatalf("Open: %v", err)
+		log.Fatal().Err(err).Msg("Open: failed to open database connection")
 	}
 	err = p.DB.Ping()
 	if err != nil {
-		log.Fatalf("Open: ping failed: %v", err)
+		log.Fatal().Err(err).Msg("Open: ping failed")
 	}
-	fmt.Println("Database connected!")
+	log.Info().Msg("Database connected!")
 }
 
 func Migrate(db *sql.DB, dir string) error {

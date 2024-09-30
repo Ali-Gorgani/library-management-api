@@ -1,9 +1,9 @@
 package main
 
 import (
-	"library-management-api/books-service/core/usecase"
-	"library-management-api/books-service/init/database"
-	"library-management-api/books-service/init/migrations"
+	"library-management-api/auth-service/core/usecase"
+	"library-management-api/auth-service/init/database"
+	"library-management-api/auth-service/init/migrations"
 	"net/http"
 	"os"
 
@@ -32,27 +32,17 @@ func run() error {
 		return err
 	}
 
-	buc := usecase.NewBookUseCase()
-	r := setupRouter(buc)
+	auc := usecase.NewAuthUseCase()
+	r := setupRouter(auc)
 
-	log.Info().Msg("Starting Books Service on :8082")
-	http.ListenAndServe(":8082", r)
+	log.Info().Msg("Starting auth Service on :8081")
+	http.ListenAndServe(":8081", r)
 
 	return nil
 }
 
-func setupRouter(buc *usecase.BookUsecase) *gin.Engine {
+func setupRouter(auc *usecase.AuthUsecase) *gin.Engine {
 	r := gin.Default()
-
-	r.POST("/books", buc.AddBook)
-	r.GET("/books", buc.GetBooks)
-	r.PUT("/books/:id", buc.UpdateBook)
-	r.DELETE("/books/:id", buc.DeleteBook)
-	r.POST("/books/borrow", buc.BorrowBook)
-	r.POST("/books/return", buc.ReturnBook)
-	r.GET("/books/search", buc.SearchBooks)
-	r.GET("/books/category/:category", buc.CategoryBooks)
-	r.GET("/books/available", buc.AvailableBooks)
 
 	r.NoRoute(func(c *gin.Context) {
 		log.Warn().Str("path", c.Request.URL.Path).Int("status", http.StatusNotFound).Str("status_text", http.StatusText(http.StatusNotFound)).Msg("page not found")

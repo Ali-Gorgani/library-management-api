@@ -22,10 +22,10 @@ type PostgresConfig struct {
 func DefaultPostgresConfig() PostgresConfig {
 	return PostgresConfig{
 		Host:     "localhost",
-		Port:     "5430",
+		Port:     "5429",
 		User:     "root",
 		Password: "secret",
-		Database: "library_users_db",
+		Database: "library_auth_db",
 		SSLMode:  "disable",
 	}
 }
