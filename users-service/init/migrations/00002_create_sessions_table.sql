@@ -7,7 +7,7 @@ CREATE TABLE sessions (
     refresh_token VARCHAR(512) NOT NULL,
     is_revoked BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 -- +goose StatementEnd
 

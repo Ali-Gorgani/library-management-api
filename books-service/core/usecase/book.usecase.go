@@ -2,8 +2,9 @@ package usecase
 
 import (
 	"library-management-api/books-service/adapter/repository"
+	"library-management-api/books-service/api/pb"
+	"library-management-api/books-service/api/server"
 	"library-management-api/books-service/core/domain"
-	"library-management-api/books-service/core/ports"
 	"net/http"
 	"strconv"
 
@@ -11,49 +12,48 @@ import (
 )
 
 type BookUsecase struct {
-	bookRepository ports.BookRepository
+	client *server.Server
 }
 
-func NewBookUseCase() *BookUsecase {
+func NewBookUseCase(client pb.BookServiceClient) *BookUsecase {
 	return &BookUsecase{
-		bookRepository: repository.NewBookRepository(),
+		client: server.NewServer(),
 	}
 }
 
-// errorResponse returns error details in JSON format.
 func errorResponse(statusCode int, err error) gin.H {
 	return gin.H{"status": statusCode, "error": err.Error()}
 }
 
-// AddBook handles POST requests for adding a new book
 func (u *BookUsecase) AddBook(c *gin.Context) {
-	var book domain.AddBookParam
+	var book domain.AddBookReq
 	if err := c.ShouldBindJSON(&book); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, err))
 		return
 	}
 
-	addedBook, err := u.bookRepository.AddBook(c.Request.Context(), book)
+	bookReqInProto := toProtoAddBookReq(&book)
+	addedBook, err := u.client.AddBook(c.Request.Context(), bookReqInProto)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
+	bookResInDomain := toDomainBook(addedBook)
 
-	c.JSON(http.StatusCreated, addedBook)
+	c.JSON(http.StatusCreated, bookResInDomain)
 }
 
-// GetBooks handles GET requests for retrieving all books
 func (u *BookUsecase) GetBooks(c *gin.Context) {
-	books, err := u.bookRepository.GetBooks(c.Request.Context())
+	books, err := u.client.GetBooks(c.Request.Context(), &pb.GetBooksReq{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
+	bookResInDomain := toDomainBooks(books.Books)
 
-	c.JSON(http.StatusOK, books)
+	c.JSON(http.StatusOK, bookResInDomain)
 }
 
-// UpdateBook handles PUT requests for updating a book
 func (u *BookUsecase) UpdateBook(c *gin.Context) {
 	bookIDStr := c.Param("id")
 	bookID, err := strconv.Atoi(bookIDStr)
@@ -62,22 +62,24 @@ func (u *BookUsecase) UpdateBook(c *gin.Context) {
 		return
 	}
 
-	var book domain.UpdateBookParam
+	var book domain.UpdateBookReq
 	if err := c.ShouldBindJSON(&book); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, err))
 		return
 	}
 
-	updatedBook, err := u.bookRepository.UpdateBook(c.Request.Context(), bookID, book)
+	bookReqInProto := toProtoUpdateBookReq(&book)
+	bookReqInProto.Id = int32(bookID)
+	updatedBook, err := u.client.UpdateBook(c.Request.Context(), bookReqInProto)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
+	updatedBookResInDomain := toDomainBook(updatedBook)
 
-	c.JSON(http.StatusOK, updatedBook)
+	c.JSON(http.StatusOK, updatedBookResInDomain)
 }
 
-// DeleteBook handles DELETE requests for deleting a book
 func (u *BookUsecase) DeleteBook(c *gin.Context) {
 	bookIDStr := c.Param("id")
 	bookID, err := strconv.Atoi(bookIDStr)
@@ -86,115 +88,128 @@ func (u *BookUsecase) DeleteBook(c *gin.Context) {
 		return
 	}
 
-	err = u.bookRepository.DeleteBook(c.Request.Context(), bookID)
+	_, err = u.client.DeleteBook(c.Request.Context(), &pb.DeleteBookReq{Id: int32(bookID)})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Book deleted successfully"})
+	c.JSON(http.StatusNoContent, nil)
 }
 
-// BorrowBook handles POST requests for borrowing a book
 func (u *BookUsecase) BorrowBook(c *gin.Context) {
-	var borrowBook domain.BorrowBookRequest
+	var borrowBook domain.BorrowBookReq
 
 	if err := c.ShouldBindJSON(&borrowBook); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, err))
 		return
 	}
 
-	borrowedBook, err := u.bookRepository.BorrowBook(c.Request.Context(), borrowBook)
+	borrowBookReqInProto := toProtoBorrowBookReq(&borrowBook)
+	borrowedBook, err := u.client.BorrowBook(c.Request.Context(), borrowBookReqInProto)
 	if err != nil {
-		if err.Error() == "book not found" {
-			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, err))
-			return
-		} else if err.Error() == "book is already borrowed" {
-			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, err))
-			return
+		switch err.Error() {
+		case repository.ErrBookNotFound.Error():
+			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, repository.ErrBookNotFound))
+		case repository.ErrBookAlreadyBorrowed.Error():
+			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, repository.ErrBookAlreadyBorrowed))
+		default:
+			c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		}
-		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
+	borrowedBookResInDomain := toDomainBook(borrowedBook)
 
-	c.JSON(http.StatusOK, borrowedBook)
+	c.JSON(http.StatusOK, borrowedBookResInDomain)
 }
 
-// ReturnBook handles POST requests for returning a book
 func (u *BookUsecase) ReturnBook(c *gin.Context) {
-	var returnBook domain.BorrowBookRequest
+	var returnBook domain.ReturnBookReq
 
 	if err := c.ShouldBindJSON(&returnBook); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, err))
 		return
 	}
 
-	returnedBook, err := u.bookRepository.ReturnBook(c.Request.Context(), returnBook)
+	returnBookReqInProto := toProtoReturnBookReq(&returnBook)
+	returnedBook, err := u.client.ReturnBook(c.Request.Context(), returnBookReqInProto)
 	if err != nil {
-		if err.Error() == "book not found" {
-			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, err))
-			return
-		} else if err.Error() == "book is already available" {
-			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, err))
-			return
-		} else if err.Error() == "borrower ID does not match" {
-			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, err))
-			return
+		switch err.Error() {
+		case repository.ErrBookNotFound.Error():
+			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, repository.ErrBookNotFound))
+		case repository.ErrBookAlreadyAvailable.Error():
+			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, repository.ErrBookAlreadyAvailable))
+		case repository.ErrBorrowerIDMismatch.Error():
+			c.JSON(http.StatusConflict, errorResponse(http.StatusConflict, repository.ErrBorrowerIDMismatch))
+		default:
+			c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		}
-		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
+	returnedBookResInDomain := toDomainBook(returnedBook)
 
-	c.JSON(http.StatusOK, returnedBook)
+	c.JSON(http.StatusOK, returnedBookResInDomain)
 }
 
-// SearchBooks handles GET requests for searching books
+// SearchBooks handles GET requests for searching books by title, author, or category
 func (u *BookUsecase) SearchBooks(c *gin.Context) {
-	query := c.Query("title")
-	if query == "" {
-		query = c.Query("author")
-	}
-	if query == "" {
-		query = c.Query("category")
-	}
-	if query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid search query"})
-		return
-	}
+	title := c.Query("title")
+	author := c.Query("author")
+	category := c.Query("category")
 
-	books, err := u.bookRepository.SearchBooks(c.Request.Context(), query)
+	// // Check if at least one of the fields is provided
+	// if title == "" && author == "" && category == "" {
+	// 	c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, repository.ErrInvalidSearchQuery))
+	// 	return
+	// }
+
+	// Call the service layer with all non-empty query parameters
+	books, err := u.client.SearchBooks(c.Request.Context(), &pb.SearchBooksReq{
+		Title:    title,
+		Author:   author,
+		Category: category,
+	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
 
-	c.JSON(http.StatusOK, books)
+	booksResInDomain := toDomainBooks(books.Books)
+	c.JSON(http.StatusOK, booksResInDomain)
 }
 
-// CategoryBooks handles GET requests for retrieving book categories
+
 func (u *BookUsecase) CategoryBooks(c *gin.Context) {
-	category := c.Param("category")
-	if category == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category"})
+	categoryType := c.Query("type")
+	categoryValue := c.Query("value")
+
+	if categoryType == "" || (categoryType != "subject" && categoryType != "genre") {
+		c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, repository.ErrInvalidCategoryType))
 		return
 	}
 
-	books, err := u.bookRepository.CategoryBooks(c.Request.Context(), category)
+	if categoryValue == "" {
+		c.JSON(http.StatusBadRequest, errorResponse(http.StatusBadRequest, repository.ErrEmptyCategoryValue))
+		return
+	}
+
+	books, err := u.client.CategoryBooks(c.Request.Context(), &pb.CategoryBooksReq{CategoryType: categoryType, CategoryValue: categoryValue})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
+	booksResInDomain := toDomainBooks(books.Books)
 
-	c.JSON(http.StatusOK, books)
+	c.JSON(http.StatusOK, booksResInDomain)
 }
 
-// AvailableBooks handles GET requests for retrieving available books
 func (u *BookUsecase) AvailableBooks(c *gin.Context) {
-	books, err := u.bookRepository.AvailableBooks(c.Request.Context())
+	books, err := u.client.AvailableBooks(c.Request.Context(), &pb.AvailableBooksReq{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse(http.StatusInternalServerError, err))
 		return
 	}
+	booksResInDomain := toDomainBooks(books.Books)
 
-	c.JSON(http.StatusOK, books)
+	c.JSON(http.StatusOK, booksResInDomain)
 }

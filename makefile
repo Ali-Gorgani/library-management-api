@@ -15,4 +15,10 @@ TYPE := sql
 %:
 	@true
 
-.PHONY: docker-compose-db goose goose-create
+proto-books:
+	rm -f books-service/api/pb/*.go
+	protoc --proto_path=books-service/api/pb --go_out=books-service/api/pb --go_opt=paths=source_relative \
+    --go-grpc_out=books-service/api/pb --go-grpc_opt=paths=source_relative \
+    books-service/api/pb/api.proto
+
+.PHONY: docker-compose-db goose goose-create proto-books

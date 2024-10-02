@@ -9,7 +9,7 @@ import (
 func HashedPassword(password string) string {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to hash password")
+		log.Error().Err(err).Msg("failed to hash password")
 	}
 	return string(hashedPassword)
 }
@@ -18,7 +18,7 @@ func HashedPassword(password string) string {
 func ComparePassword(hashedPassword, password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to compare password")
+		log.Error().Err(err).Msg("failed to compare password")
 		return false
 	}
 	return true

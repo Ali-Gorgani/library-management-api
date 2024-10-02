@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/andrefsp/grpc-books-service/api/grpc/pb";
+
+import "google/protobuf/timestamp.proto";
+
+message BookRes {
+    int32 id = 1;
+    string title = 2;
+    string author = 3;
+    string category = 4;
+    string subject = 5;
+    string genre = 6;
+    int32 published_year = 7;
+    bool available = 8;
+    optional int32 borrower_id = 9;  // Optional field
+    google.protobuf.Timestamp created_at = 10;
+}
+
+message AddBookReq {
+    string title = 1;
+    string author = 2;
+    string category = 3;
+    string subject = 4;
+    string genre = 5;
+    int32 published_year = 6;
+}
+
+message GetBooksReq {}
+
+message GetBooksRes {
+    repeated BookRes books = 1;
+}
+
+message UpdateBookReq {
+    int32 id = 1;
+    string title = 2;
+    string author = 3;
+    string category = 4;
+    string subject = 5;
+    string genre = 6;
+    int32 published_year = 7;
+    bool available = 8;
+    optional int32 borrower_id = 9;  // Optional field
+}
+
+message DeleteBookReq {
+    int32 id = 1;
+}
+
+message DeleteBookRes {}
+
+message BorrowBookReq {
+    int32 book_id = 1;
+    optional int32 borrower_id = 2;  // Optional field
+}
+
+message ReturnBookReq {
+    int32 book_id = 1;
+    optional int32 borrower_id = 2;  // Optional field
+}
+
+message SearchBooksReq {
+    string title = 1;
+    string author = 2;
+    string category = 3;
+}
+
+message CategoryBooksReq {
+    string categoryType = 1;
+    string categoryValue = 2;
+}
+
+message AvailableBooksReq {}
+
+service BookService {
+    rpc AddBook (AddBookReq) returns (BookRes);
+    rpc GetBooks (GetBooksReq) returns (GetBooksRes);
+    rpc UpdateBook (UpdateBookReq) returns (BookRes);
+    rpc DeleteBook (DeleteBookReq) returns (DeleteBookRes);
+    rpc BorrowBook (BorrowBookReq) returns (BookRes);
+    rpc ReturnBook (ReturnBookReq) returns (BookRes);
+    rpc SearchBooks (SearchBooksReq) returns (GetBooksRes);
+    rpc CategoryBooks (CategoryBooksReq) returns (GetBooksRes);
+    rpc AvailableBooks (AvailableBooksReq) returns (GetBooksRes);
+}
