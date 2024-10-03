@@ -3,21 +3,11 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"library-management-api/books-service/core/domain"
 	"library-management-api/books-service/core/ports"
 	"library-management-api/books-service/init/database"
+	"library-management-api/util/errorhandler"
 	"strconv"
-)
-
-var (
-	ErrBookNotFound         = errors.New("book not found")
-	ErrBookAlreadyBorrowed  = errors.New("book is already borrowed")
-	ErrBookAlreadyAvailable = errors.New("book is already available")
-	ErrBorrowerIDMismatch   = errors.New("borrower ID does not match")
-	ErrInvalidCategoryType  = errors.New("invalid category type")
-	ErrEmptyCategoryValue   = errors.New("category value cannot be empty")
-	ErrInvalidSearchQuery   = errors.New("invalid search query")
 )
 
 type BookRepository struct {
@@ -31,21 +21,20 @@ func NewBookRepository() ports.BookRepository {
 }
 
 // Create implements ports.BookRepository.
-func (b *BookRepository) AddBook(ctx context.Context, book *domain.AddBookReq) (*domain.BookRes, error) {
-	var addedBook domain.BookRes
-
+func (b *BookRepository) AddBook(ctx context.Context, book *domain.Book) (*domain.Book, error) {
+	var addedBook domain.Book
 	query := "INSERT INTO books (title, author, category, subject, genre, published_year) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *"
 	row := b.db.QueryRow(query, book.Title, book.Author, book.Category, book.Subject, book.Genre, book.PublishedYear)
 	err := row.Scan(&addedBook.ID, &addedBook.Title, &addedBook.Author, &addedBook.Category, &addedBook.Subject, &addedBook.Genre, &addedBook.PublishedYear, &addedBook.Available, &addedBook.BorrowerID, &addedBook.CreatedAt)
 	if err != nil {
-		return &domain.BookRes{}, err
+		return &domain.Book{}, err
 	}
 	return &addedBook, nil
 }
 
 // GetBooks implements ports.BookRepository.
-func (b *BookRepository) GetBooks(ctx context.Context) ([]*domain.BookRes, error) {
-	var books []*domain.BookRes
+func (b *BookRepository) GetBooks(ctx context.Context) ([]*domain.Book, error) {
+	var books []*domain.Book
 
 	rows, err := b.db.Query("SELECT * FROM books")
 	if err != nil {
@@ -53,7 +42,7 @@ func (b *BookRepository) GetBooks(ctx context.Context) ([]*domain.BookRes, error
 	}
 	defer rows.Close()
 	for rows.Next() {
-		book := new(domain.BookRes)
+		book := new(domain.Book)
 		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Category, &book.Subject, &book.Genre, &book.PublishedYear, &book.Available, &book.BorrowerID, &book.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -63,112 +52,75 @@ func (b *BookRepository) GetBooks(ctx context.Context) ([]*domain.BookRes, error
 	return books, nil
 }
 
+// GetBook implements ports.BookRepository.
+func (b *BookRepository) GetBook(ctx context.Context, book *domain.Book) (*domain.Book, error) {
+	var foundBook domain.Book
+
+	query := "SELECT * FROM books WHERE id=$1"
+	row := b.db.QueryRow(query, book.ID)
+	err := row.Scan(&foundBook.ID, &foundBook.Title, &foundBook.Author, &foundBook.Category, &foundBook.Subject, &foundBook.Genre, &foundBook.PublishedYear, &foundBook.Available, &foundBook.BorrowerID, &foundBook.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return &domain.Book{}, errorhandler.ErrBookNotFound
+		}
+		return &domain.Book{}, err
+	}
+	return &foundBook, nil
+}
+
 // UpdateBook implements ports.BookRepository.
-func (b *BookRepository) UpdateBook(ctx context.Context, id int, book *domain.UpdateBookReq) (*domain.BookRes, error) {
-	var updatedBook domain.BookRes
+func (b *BookRepository) UpdateBook(ctx context.Context, book *domain.Book) (*domain.Book, error) {
+	var updatedBook domain.Book
 
 	query := "UPDATE books SET title=$1, author=$2, category=$3, subject=$4, genre=$5, published_year=$6, available=$7, borrower_id=$8 WHERE id=$9 RETURNING *"
-	row := b.db.QueryRow(query, book.Title, book.Author, book.Category, book.Subject, book.Genre, book.PublishedYear, book.Available, book.BorrowerID, id)
+	row := b.db.QueryRow(query, book.Title, book.Author, book.Category, book.Subject, book.Genre, book.PublishedYear, book.Available, book.BorrowerID, book.ID)
 	err := row.Scan(&updatedBook.ID, &updatedBook.Title, &updatedBook.Author, &updatedBook.Category, &updatedBook.Subject, &updatedBook.Genre, &updatedBook.PublishedYear, &updatedBook.Available, &updatedBook.BorrowerID, &updatedBook.CreatedAt)
 	if err != nil {
-		return &domain.BookRes{}, err
+		if err == sql.ErrNoRows {
+			return &domain.Book{}, errorhandler.ErrBookNotFound
+		}
+		return &domain.Book{}, err
 	}
 	return &updatedBook, nil
 }
 
 // DeleteBook implements ports.BookRepository.
-func (b *BookRepository) DeleteBook(ctx context.Context, id int) error {
+func (b *BookRepository) DeleteBook(ctx context.Context, book *domain.Book) error {
 	query := "DELETE FROM books WHERE id=$1"
-	_, err := b.db.Exec(query, id)
+	_, err := b.db.Exec(query, book.ID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return errorhandler.ErrBookNotFound
+		}
 		return err
 	}
 	return nil
 }
 
-// BorrowBook implements ports.BookRepository.
-func (b *BookRepository) BorrowBook(ctx context.Context, borrowBook *domain.BorrowBookReq) (*domain.BookRes, error) {
-	var borrowedBook domain.BookRes
-	// First, retrieve the book to check its availability
-	query := "SELECT available FROM books WHERE id=$1"
-	row := b.db.QueryRow(query, borrowBook.BookID)
-	err := row.Scan(&borrowedBook.Available)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return &domain.BookRes{}, errors.New("book not found")
-		}
-		return &domain.BookRes{}, err
-	}
-
-	// Check if the book is already borrowed
-	if !borrowedBook.Available {
-		return &domain.BookRes{}, errors.New("book is already borrowed")
-	}
-
-	// Update the book to mark it as borrowed and set the borrower ID
-	query = "UPDATE books SET available=false, borrower_id=$1 WHERE id=$2 RETURNING *"
-	row = b.db.QueryRow(query, borrowBook.BorrowerID, borrowBook.BookID)
-	err = row.Scan(&borrowedBook.ID, &borrowedBook.Title, &borrowedBook.Author, &borrowedBook.Category, &borrowedBook.Subject, &borrowedBook.Genre, &borrowedBook.PublishedYear, &borrowedBook.Available, &borrowedBook.BorrowerID, &borrowedBook.CreatedAt)
-	if err != nil {
-		return &domain.BookRes{}, err
-	}
-	return &borrowedBook, nil
-}
-
-// ReturnBook implements ports.BookRepository.
-func (b *BookRepository) ReturnBook(ctx context.Context, borrowBook *domain.ReturnBookReq) (*domain.BookRes, error) {
-	var returnedBook domain.BookRes
-
-	// First, retrieve the book to check its availability and borrower ID
-	query := "SELECT available, borrower_id FROM books WHERE id=$1"
-	row := b.db.QueryRow(query, borrowBook.BookID)
-	err := row.Scan(&returnedBook.Available, &returnedBook.BorrowerID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return &domain.BookRes{}, errors.New("book not found")
-		}
-		return &domain.BookRes{}, err
-	}
-
-	// Check if the book is already available
-	if returnedBook.Available {
-		return &domain.BookRes{}, errors.New("book is already available")
-	}
-
-	// Check if the borrower ID matches
-	if *returnedBook.BorrowerID != *borrowBook.BorrowerID {
-		return &domain.BookRes{}, errors.New("borrower ID does not match")
-	}
-
-	// Update the book to mark it as available and clear the borrower ID
-	query = "UPDATE books SET available=true, borrower_id=NULL WHERE id=$1 RETURNING *"
-	row = b.db.QueryRow(query, borrowBook.BookID)
-	err = row.Scan(&returnedBook.ID, &returnedBook.Title, &returnedBook.Author, &returnedBook.Category, &returnedBook.Subject, &returnedBook.Genre, &returnedBook.PublishedYear, &returnedBook.Available, &returnedBook.BorrowerID, &returnedBook.CreatedAt)
-	if err != nil {
-		return &domain.BookRes{}, err
-	}
-	return &returnedBook, nil
-}
-
 // SearchBooks implements ports.BookRepository.
-func (b *BookRepository) SearchBooks(ctx context.Context, title string, author string, category string) ([]*domain.BookRes, error) {
-	var books []*domain.BookRes
+func (b *BookRepository) SearchBooks(ctx context.Context, book *domain.Book) ([]*domain.Book, error) {
+	var books []*domain.Book
 
 	// Build the SQL query dynamically based on which parameters are provided
 	query := "SELECT id, title, author, category, subject, genre, published_year, available, borrower_id, created_at FROM books WHERE 1=1"
 	var args []interface{}
+	argCounter := 1
 
-	if title != "" {
-		query += " AND title ILIKE $1"     // ILIKE for case-insensitive search
-		args = append(args, "%"+title+"%") // Use wildcards for searching
+	// Add conditions based on provided search parameters
+	if book.Title != "" {
+		query += " AND title ILIKE $" + strconv.Itoa(argCounter)
+		args = append(args, "%"+book.Title+"%") // Wildcard for partial match
+		argCounter++
 	}
-	if author != "" {
-		query += " AND author ILIKE $" + strconv.Itoa(len(args)+1)
-		args = append(args, "%"+author+"%")
+	if book.Author != "" {
+		query += " AND author ILIKE $" + strconv.Itoa(argCounter)
+		args = append(args, "%"+book.Author+"%")
+		argCounter++
 	}
-	if category != "" {
-		query += " AND (category ILIKE $" + strconv.Itoa(len(args)+1) + " OR subject ILIKE $" + strconv.Itoa(len(args)+2) + " OR genre ILIKE $" + strconv.Itoa(len(args)+3) + ")"
-		args = append(args, "%"+category+"%", "%"+category+"%", "%"+category+"%")
+	if book.Category != "" {
+		query += " AND category ILIKE $" + strconv.Itoa(argCounter)
+		args = append(args, "%"+book.Category+"%")
+		argCounter++
 	}
 
 	rows, err := b.db.QueryContext(ctx, query, args...)
@@ -179,7 +131,7 @@ func (b *BookRepository) SearchBooks(ctx context.Context, title string, author s
 
 	// Iterate over the rows and scan data into a new instance of book for each row
 	for rows.Next() {
-		book := new(domain.BookRes)
+		book := new(domain.Book)
 		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Category, &book.Subject, &book.Genre, &book.PublishedYear, &book.Available, &book.BorrowerID, &book.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -190,26 +142,29 @@ func (b *BookRepository) SearchBooks(ctx context.Context, title string, author s
 }
 
 // CategoryBooks implements ports.BookRepository.
-func (b *BookRepository) CategoryBooks(ctx context.Context, categoryType string, categoryValue string) ([]*domain.BookRes, error) {
-	var books []*domain.BookRes
+func (b *BookRepository) CategoryBooks(ctx context.Context, book *domain.Book) ([]*domain.Book, error) {
+	var books []*domain.Book
+	var categoryType, categoryValue string
 
 	// Dynamically create the query based on the category type
-	var query string
-	if categoryType == "subject" {
-		query = "SELECT id, title, author, category, subject, genre, published_year, available, borrower_id, created_at FROM books WHERE subject = $1"
-	} else if categoryType == "genre" {
-		query = "SELECT id, title, author, category, subject, genre, published_year, available, borrower_id, created_at FROM books WHERE genre = $1"
+	if book.Subject != "" {
+		categoryType = "subject"
+		categoryValue = book.Subject
+	} else if book.Genre != "" {
+		categoryType = "genre"
+		categoryValue = book.Genre
 	}
 
-	rows, err := b.db.QueryContext(ctx, query, categoryValue)
+	query := "SELECT id, title, author, category, subject, genre, published_year, available, borrower_id, created_at FROM books WHERE $1 = $2"
+	rows, err := b.db.QueryContext(ctx, query, categoryType, categoryValue)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	// Iterate over the rows and scan data into a new instance of book for each row
+	// Fetch and scan rows into the books slice
 	for rows.Next() {
-		book := new(domain.BookRes)
+		book := new(domain.Book)
 		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Category, &book.Subject, &book.Genre, &book.PublishedYear, &book.Available, &book.BorrowerID, &book.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -220,8 +175,8 @@ func (b *BookRepository) CategoryBooks(ctx context.Context, categoryType string,
 }
 
 // AvailableBooks implements ports.BookRepository.
-func (b *BookRepository) AvailableBooks(ctx context.Context) ([]*domain.BookRes, error) {
-	var books []*domain.BookRes
+func (b *BookRepository) AvailableBooks(ctx context.Context) ([]*domain.Book, error) {
+	var books []*domain.Book
 
 	rows, err := b.db.Query("SELECT * FROM books WHERE available=true")
 	if err != nil {
@@ -229,7 +184,7 @@ func (b *BookRepository) AvailableBooks(ctx context.Context) ([]*domain.BookRes,
 	}
 	defer rows.Close()
 	for rows.Next() {
-		book := new(domain.BookRes)
+		book := new(domain.Book)
 		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Category, &book.Subject, &book.Genre, &book.PublishedYear, &book.Available, &book.BorrowerID, &book.CreatedAt)
 		if err != nil {
 			return nil, err

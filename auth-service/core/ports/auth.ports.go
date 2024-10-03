@@ -1,8 +1,13 @@
 package ports
 
-import "time"
+import (
+	"context"
+	"library-management-api/auth-service/core/domain"
+)
 
 type AuthRepository interface {
-	CreateToken(username string, role string, duration time.Duration) (string, *Payload, error)
-	VerifyToken(token string) (*Payload, error)
+	CreateToken(ctx context.Context, Auth *domain.Auth) (*domain.Auth, error)
+	GetToken(ctx context.Context, Auth *domain.Auth) (*domain.Auth, error)
+	RevokeToken(ctx context.Context, Auth *domain.Auth) error
+	DeleteToken(ctx context.Context, Auth *domain.Auth) error
 }

@@ -1,36 +1,33 @@
 package main
 
 import (
-    "log"
-    "net/http"
-    "github.com/go-chi/chi/v5"
+	"library-management-api/api-gateway/routes"
+	"net/http"
+	"os"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
+func init() {
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+}
+
 func main() {
-    r := chi.NewRouter()
+	r := gin.Default()
+	routes.AuthRoutes(r)
+	routes.UserRoutes(r)
+	routes.BookRoutes(r)
 
-    // Define routes for user and book services
-    r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-        w.Write([]byte("Welcome to the Library Management API!"))
-    })
-    
-    r.Mount("/users", usersRouter())
-    r.Mount("/books", booksRouter())
+	r.NoRoute(func(c *gin.Context) {
+		log.Warn().Str("path", c.Request.URL.Path).Int("status", http.StatusNotFound).Str("status_text", http.StatusText(http.StatusNotFound)).Msg("page not found")
+		c.String(http.StatusNotFound, "404 page not found")
+	})
 
-    log.Println("Starting API Gateway on :8080")
-    if err := http.ListenAndServe(":8080", r); err != nil {
-        log.Fatalf("Error starting server: %s", err)
-    }
-}
-
-func usersRouter() http.Handler {
-    r := chi.NewRouter()
-    // Define user service routes here
-    return r
-}
-
-func booksRouter() http.Handler {
-    r := chi.NewRouter()
-    // Define book service routes here
-    return r
+	log.Info().Msg("Starting Users Service on :8081")
+	err := http.ListenAndServe(":8081", r)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to start api gateway service")
+	}
 }

@@ -6,13 +6,12 @@ import (
 )
 
 type BookRepository interface {
-	AddBook(ctx context.Context, book *domain.AddBookReq) (*domain.BookRes, error)
-	GetBooks(ctx context.Context) ([]*domain.BookRes, error)
-	UpdateBook(ctx context.Context, id int, book *domain.UpdateBookReq) (*domain.BookRes, error)
-	DeleteBook(ctx context.Context, id int) error
-	BorrowBook(ctx context.Context, borrowBook *domain.BorrowBookReq) (*domain.BookRes, error)
-	ReturnBook(ctx context.Context, borrowBook *domain.ReturnBookReq) (*domain.BookRes, error)
-	SearchBooks(ctx context.Context, title string, author string, category string) ([]*domain.BookRes, error)
-	CategoryBooks(ctx context.Context, categoryType string, categoryValue string) ([]*domain.BookRes, error)
-	AvailableBooks(ctx context.Context) ([]*domain.BookRes, error)
+	AddBook(ctx context.Context, book *domain.Book) (*domain.Book, error)
+	GetBooks(ctx context.Context) ([]*domain.Book, error)
+	GetBook(ctx context.Context, book *domain.Book) (*domain.Book, error)
+	UpdateBook(ctx context.Context, book *domain.Book) (*domain.Book, error)
+	DeleteBook(ctx context.Context, book *domain.Book) error
+	SearchBooks(ctx context.Context, book *domain.Book) ([]*domain.Book, error)
+	CategoryBooks(ctx context.Context, book *domain.Book) ([]*domain.Book, error)
+	AvailableBooks(ctx context.Context) ([]*domain.Book, error)
 }
