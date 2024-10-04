@@ -27,7 +27,7 @@ type AddBookReq struct {
 type GetBooksReq struct{}
 
 type GetBookReq struct {
-	BookID int
+	ID int
 }
 
 type UpdateBookReqToBind struct {
@@ -42,7 +42,7 @@ type UpdateBookReqToBind struct {
 }
 
 type UpdateBookReq struct {
-	BookID        int
+	ID        int
 	Title         string `json:"title"`
 	Author        string `json:"author"`
 	Category      string `json:"category"`
@@ -54,16 +54,16 @@ type UpdateBookReq struct {
 }
 
 type DeleteBookReq struct {
-	BookID int
+	ID int
 }
 
 type BorrowBookReq struct {
-	BookID     int  `json:"book_id"`
+	ID     int  `json:"book_id"`
 	BorrowerID *int `json:"borrower_id"`
 }
 
 type ReturnBookReq struct {
-	BookID     int  `json:"book_id"`
+	ID     int  `json:"book_id"`
 	BorrowerID *int `json:"borrower_id"`
 }
 

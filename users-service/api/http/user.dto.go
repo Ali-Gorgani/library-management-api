@@ -1,5 +1,7 @@
 package http
 
+import "time"
+
 type AddUserReq struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -8,11 +10,11 @@ type AddUserReq struct {
 }
 
 type UserRes struct {
-	ID        int    `json:"id"`
-	Username  string `json:"username"`
-	Email     string `json:"email"`
-	IsAdmin   bool   `json:"is_admin"`
-	CreatedAt string `json:"created_at"`
+	ID        int       `json:"id"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	IsAdmin   bool      `json:"is_admin"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type GetUsersReq struct{}

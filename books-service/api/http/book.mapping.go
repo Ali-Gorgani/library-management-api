@@ -38,13 +38,13 @@ func MapAddBookReqToBook(req *AddBookReq) *domain.Book {
 
 func MapGetBookReqToBook(req *GetBookReq) *domain.Book {
 	return &domain.Book{
-		ID: req.BookID,
+		ID: req.ID,
 	}
 }
 
 func MapUpdateBookReqToBook(req *UpdateBookReq) *domain.Book {
 	return &domain.Book{
-		ID:            req.BookID,
+		ID:            req.ID,
 		Title:         req.Title,
 		Author:        req.Author,
 		Category:      req.Category,
@@ -58,20 +58,20 @@ func MapUpdateBookReqToBook(req *UpdateBookReq) *domain.Book {
 
 func MapDeleteBookReqToBook(req *DeleteBookReq) *domain.Book {
 	return &domain.Book{
-		ID: req.BookID,
+		ID: req.ID,
 	}
 }
 
 func MapBorrowBookReqToBook(req *BorrowBookReq) *domain.Book {
 	return &domain.Book{
-		ID:         req.BookID,
+		ID:         req.ID,
 		BorrowerID: req.BorrowerID,
 	}
 }
 
 func MapReturnBookReqToBook(req *ReturnBookReq) *domain.Book {
 	return &domain.Book{
-		ID:         req.BookID,
+		ID:         req.ID,
 		BorrowerID: req.BorrowerID,
 	}
 }

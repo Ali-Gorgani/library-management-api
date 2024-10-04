@@ -1,10 +1,12 @@
 package domain
 
+import "time"
+
 type User struct {
 	ID        int    
 	Username  string 
 	Password  string
 	Email     string 
 	IsAdmin   bool   
-	CreatedAt string 
+	CreatedAt time.Time 
 }

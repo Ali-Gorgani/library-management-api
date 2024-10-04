@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	BookService_AddBook_FullMethodName        = "/pb.BookService/AddBook"
 	BookService_GetBooks_FullMethodName       = "/pb.BookService/GetBooks"
+	BookService_GetBook_FullMethodName        = "/pb.BookService/GetBook"
 	BookService_UpdateBook_FullMethodName     = "/pb.BookService/UpdateBook"
 	BookService_DeleteBook_FullMethodName     = "/pb.BookService/DeleteBook"
 	BookService_BorrowBook_FullMethodName     = "/pb.BookService/BorrowBook"
@@ -35,14 +36,15 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BookServiceClient interface {
 	AddBook(ctx context.Context, in *AddBookReq, opts ...grpc.CallOption) (*BookRes, error)
-	GetBooks(ctx context.Context, in *GetBooksReq, opts ...grpc.CallOption) (*GetBooksRes, error)
+	GetBooks(ctx context.Context, in *GetBooksReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BookRes], error)
+	GetBook(ctx context.Context, in *GetBookReq, opts ...grpc.CallOption) (*BookRes, error)
 	UpdateBook(ctx context.Context, in *UpdateBookReq, opts ...grpc.CallOption) (*BookRes, error)
 	DeleteBook(ctx context.Context, in *DeleteBookReq, opts ...grpc.CallOption) (*DeleteBookRes, error)
 	BorrowBook(ctx context.Context, in *BorrowBookReq, opts ...grpc.CallOption) (*BookRes, error)
 	ReturnBook(ctx context.Context, in *ReturnBookReq, opts ...grpc.CallOption) (*BookRes, error)
-	SearchBooks(ctx context.Context, in *SearchBooksReq, opts ...grpc.CallOption) (*GetBooksRes, error)
-	CategoryBooks(ctx context.Context, in *CategoryBooksReq, opts ...grpc.CallOption) (*GetBooksRes, error)
-	AvailableBooks(ctx context.Context, in *AvailableBooksReq, opts ...grpc.CallOption) (*GetBooksRes, error)
+	SearchBooks(ctx context.Context, in *SearchBooksReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BookRes], error)
+	CategoryBooks(ctx context.Context, in *CategoryBooksReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BookRes], error)
+	AvailableBooks(ctx context.Context, in *AvailableBooksReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BookRes], error)
 }
 
 type bookServiceClient struct {
@@ -63,10 +65,29 @@ func (c *bookServiceClient) AddBook(ctx context.Context, in *AddBookReq, opts ..
 	return out, nil
 }
 
-func (c *bookServiceClient) GetBooks(ctx context.Context, in *GetBooksReq, opts ...grpc.CallOption) (*GetBooksRes, error) {
+func (c *bookServiceClient) GetBooks(ctx context.Context, in *GetBooksReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BookRes], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetBooksRes)
-	err := c.cc.Invoke(ctx, BookService_GetBooks_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &BookService_ServiceDesc.Streams[0], BookService_GetBooks_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[GetBooksReq, BookRes]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type BookService_GetBooksClient = grpc.ServerStreamingClient[BookRes]
+
+func (c *bookServiceClient) GetBook(ctx context.Context, in *GetBookReq, opts ...grpc.CallOption) (*BookRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BookRes)
+	err := c.cc.Invoke(ctx, BookService_GetBook_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -113,49 +134,77 @@ func (c *bookServiceClient) ReturnBook(ctx context.Context, in *ReturnBookReq, o
 	return out, nil
 }
 
-func (c *bookServiceClient) SearchBooks(ctx context.Context, in *SearchBooksReq, opts ...grpc.CallOption) (*GetBooksRes, error) {
+func (c *bookServiceClient) SearchBooks(ctx context.Context, in *SearchBooksReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BookRes], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetBooksRes)
-	err := c.cc.Invoke(ctx, BookService_SearchBooks_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &BookService_ServiceDesc.Streams[1], BookService_SearchBooks_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[SearchBooksReq, BookRes]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
 
-func (c *bookServiceClient) CategoryBooks(ctx context.Context, in *CategoryBooksReq, opts ...grpc.CallOption) (*GetBooksRes, error) {
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type BookService_SearchBooksClient = grpc.ServerStreamingClient[BookRes]
+
+func (c *bookServiceClient) CategoryBooks(ctx context.Context, in *CategoryBooksReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BookRes], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetBooksRes)
-	err := c.cc.Invoke(ctx, BookService_CategoryBooks_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &BookService_ServiceDesc.Streams[2], BookService_CategoryBooks_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[CategoryBooksReq, BookRes]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
 
-func (c *bookServiceClient) AvailableBooks(ctx context.Context, in *AvailableBooksReq, opts ...grpc.CallOption) (*GetBooksRes, error) {
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type BookService_CategoryBooksClient = grpc.ServerStreamingClient[BookRes]
+
+func (c *bookServiceClient) AvailableBooks(ctx context.Context, in *AvailableBooksReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BookRes], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetBooksRes)
-	err := c.cc.Invoke(ctx, BookService_AvailableBooks_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &BookService_ServiceDesc.Streams[3], BookService_AvailableBooks_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[AvailableBooksReq, BookRes]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type BookService_AvailableBooksClient = grpc.ServerStreamingClient[BookRes]
 
 // BookServiceServer is the server API for BookService service.
 // All implementations must embed UnimplementedBookServiceServer
 // for forward compatibility.
 type BookServiceServer interface {
 	AddBook(context.Context, *AddBookReq) (*BookRes, error)
-	GetBooks(context.Context, *GetBooksReq) (*GetBooksRes, error)
+	GetBooks(*GetBooksReq, grpc.ServerStreamingServer[BookRes]) error
+	GetBook(context.Context, *GetBookReq) (*BookRes, error)
 	UpdateBook(context.Context, *UpdateBookReq) (*BookRes, error)
 	DeleteBook(context.Context, *DeleteBookReq) (*DeleteBookRes, error)
 	BorrowBook(context.Context, *BorrowBookReq) (*BookRes, error)
 	ReturnBook(context.Context, *ReturnBookReq) (*BookRes, error)
-	SearchBooks(context.Context, *SearchBooksReq) (*GetBooksRes, error)
-	CategoryBooks(context.Context, *CategoryBooksReq) (*GetBooksRes, error)
-	AvailableBooks(context.Context, *AvailableBooksReq) (*GetBooksRes, error)
+	SearchBooks(*SearchBooksReq, grpc.ServerStreamingServer[BookRes]) error
+	CategoryBooks(*CategoryBooksReq, grpc.ServerStreamingServer[BookRes]) error
+	AvailableBooks(*AvailableBooksReq, grpc.ServerStreamingServer[BookRes]) error
 	mustEmbedUnimplementedBookServiceServer()
 }
 
@@ -169,8 +218,11 @@ type UnimplementedBookServiceServer struct{}
 func (UnimplementedBookServiceServer) AddBook(context.Context, *AddBookReq) (*BookRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddBook not implemented")
 }
-func (UnimplementedBookServiceServer) GetBooks(context.Context, *GetBooksReq) (*GetBooksRes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetBooks not implemented")
+func (UnimplementedBookServiceServer) GetBooks(*GetBooksReq, grpc.ServerStreamingServer[BookRes]) error {
+	return status.Errorf(codes.Unimplemented, "method GetBooks not implemented")
+}
+func (UnimplementedBookServiceServer) GetBook(context.Context, *GetBookReq) (*BookRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBook not implemented")
 }
 func (UnimplementedBookServiceServer) UpdateBook(context.Context, *UpdateBookReq) (*BookRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateBook not implemented")
@@ -184,14 +236,14 @@ func (UnimplementedBookServiceServer) BorrowBook(context.Context, *BorrowBookReq
 func (UnimplementedBookServiceServer) ReturnBook(context.Context, *ReturnBookReq) (*BookRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReturnBook not implemented")
 }
-func (UnimplementedBookServiceServer) SearchBooks(context.Context, *SearchBooksReq) (*GetBooksRes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SearchBooks not implemented")
+func (UnimplementedBookServiceServer) SearchBooks(*SearchBooksReq, grpc.ServerStreamingServer[BookRes]) error {
+	return status.Errorf(codes.Unimplemented, "method SearchBooks not implemented")
 }
-func (UnimplementedBookServiceServer) CategoryBooks(context.Context, *CategoryBooksReq) (*GetBooksRes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CategoryBooks not implemented")
+func (UnimplementedBookServiceServer) CategoryBooks(*CategoryBooksReq, grpc.ServerStreamingServer[BookRes]) error {
+	return status.Errorf(codes.Unimplemented, "method CategoryBooks not implemented")
 }
-func (UnimplementedBookServiceServer) AvailableBooks(context.Context, *AvailableBooksReq) (*GetBooksRes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AvailableBooks not implemented")
+func (UnimplementedBookServiceServer) AvailableBooks(*AvailableBooksReq, grpc.ServerStreamingServer[BookRes]) error {
+	return status.Errorf(codes.Unimplemented, "method AvailableBooks not implemented")
 }
 func (UnimplementedBookServiceServer) mustEmbedUnimplementedBookServiceServer() {}
 func (UnimplementedBookServiceServer) testEmbeddedByValue()                     {}
@@ -232,20 +284,31 @@ func _BookService_AddBook_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BookService_GetBooks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetBooksReq)
+func _BookService_GetBooks_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetBooksReq)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(BookServiceServer).GetBooks(m, &grpc.GenericServerStream[GetBooksReq, BookRes]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type BookService_GetBooksServer = grpc.ServerStreamingServer[BookRes]
+
+func _BookService_GetBook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBookReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BookServiceServer).GetBooks(ctx, in)
+		return srv.(BookServiceServer).GetBook(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: BookService_GetBooks_FullMethodName,
+		FullMethod: BookService_GetBook_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BookServiceServer).GetBooks(ctx, req.(*GetBooksReq))
+		return srv.(BookServiceServer).GetBook(ctx, req.(*GetBookReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -322,59 +385,38 @@ func _BookService_ReturnBook_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BookService_SearchBooks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SearchBooksReq)
-	if err := dec(in); err != nil {
-		return nil, err
+func _BookService_SearchBooks_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SearchBooksReq)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(BookServiceServer).SearchBooks(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: BookService_SearchBooks_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BookServiceServer).SearchBooks(ctx, req.(*SearchBooksReq))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(BookServiceServer).SearchBooks(m, &grpc.GenericServerStream[SearchBooksReq, BookRes]{ServerStream: stream})
 }
 
-func _BookService_CategoryBooks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CategoryBooksReq)
-	if err := dec(in); err != nil {
-		return nil, err
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type BookService_SearchBooksServer = grpc.ServerStreamingServer[BookRes]
+
+func _BookService_CategoryBooks_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(CategoryBooksReq)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(BookServiceServer).CategoryBooks(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: BookService_CategoryBooks_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BookServiceServer).CategoryBooks(ctx, req.(*CategoryBooksReq))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(BookServiceServer).CategoryBooks(m, &grpc.GenericServerStream[CategoryBooksReq, BookRes]{ServerStream: stream})
 }
 
-func _BookService_AvailableBooks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AvailableBooksReq)
-	if err := dec(in); err != nil {
-		return nil, err
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type BookService_CategoryBooksServer = grpc.ServerStreamingServer[BookRes]
+
+func _BookService_AvailableBooks_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(AvailableBooksReq)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(BookServiceServer).AvailableBooks(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: BookService_AvailableBooks_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BookServiceServer).AvailableBooks(ctx, req.(*AvailableBooksReq))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(BookServiceServer).AvailableBooks(m, &grpc.GenericServerStream[AvailableBooksReq, BookRes]{ServerStream: stream})
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type BookService_AvailableBooksServer = grpc.ServerStreamingServer[BookRes]
 
 // BookService_ServiceDesc is the grpc.ServiceDesc for BookService service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -388,8 +430,8 @@ var BookService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _BookService_AddBook_Handler,
 		},
 		{
-			MethodName: "GetBooks",
-			Handler:    _BookService_GetBooks_Handler,
+			MethodName: "GetBook",
+			Handler:    _BookService_GetBook_Handler,
 		},
 		{
 			MethodName: "UpdateBook",
@@ -407,19 +449,28 @@ var BookService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ReturnBook",
 			Handler:    _BookService_ReturnBook_Handler,
 		},
+	},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "SearchBooks",
-			Handler:    _BookService_SearchBooks_Handler,
+			StreamName:    "GetBooks",
+			Handler:       _BookService_GetBooks_Handler,
+			ServerStreams: true,
 		},
 		{
-			MethodName: "CategoryBooks",
-			Handler:    _BookService_CategoryBooks_Handler,
+			StreamName:    "SearchBooks",
+			Handler:       _BookService_SearchBooks_Handler,
+			ServerStreams: true,
 		},
 		{
-			MethodName: "AvailableBooks",
-			Handler:    _BookService_AvailableBooks_Handler,
+			StreamName:    "CategoryBooks",
+			Handler:       _BookService_CategoryBooks_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "AvailableBooks",
+			Handler:       _BookService_AvailableBooks_Handler,
+			ServerStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "api.proto",
 }

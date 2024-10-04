@@ -56,7 +56,7 @@ func (b *BookController) GetBook(c *gin.Context) {
 	}
 
 	getBookReq := &GetBookReq{
-		BookID: bookID,
+		ID: bookID,
 	}
 
 	foundBook, err := b.bookUseCase.GetBook(c.Request.Context(), MapGetBookReqToBook(getBookReq))
@@ -87,7 +87,7 @@ func (b *BookController) UpdateBook(c *gin.Context) {
 	}
 
 	updateBookReq := &UpdateBookReq{
-		BookID:        bookID,
+		ID:            bookID,
 		Title:         book.Title,
 		Author:        book.Author,
 		Category:      book.Category,
@@ -120,7 +120,7 @@ func (b *BookController) DeleteBook(c *gin.Context) {
 	}
 
 	deleteBookReq := &DeleteBookReq{
-		BookID: bookID,
+		ID: bookID,
 	}
 
 	err = b.bookUseCase.DeleteBook(c.Request.Context(), MapDeleteBookReqToBook(deleteBookReq))
@@ -147,7 +147,7 @@ func (b *BookController) BorrowBook(c *gin.Context) {
 	claims := c.Value("authKey").(*token.UserClaims)
 
 	borrowBook := &BorrowBookReq{
-		BookID:     bookID,
+		ID:         bookID,
 		BorrowerID: &claims.ID,
 	}
 
@@ -178,7 +178,7 @@ func (b *BookController) ReturnBook(c *gin.Context) {
 	claims := c.Value("authKey").(*token.UserClaims)
 
 	returnBook := &ReturnBookReq{
-		BookID:     bookID,
+		ID:         bookID,
 		BorrowerID: &claims.ID,
 	}
 

@@ -1,9 +1,11 @@
 package repository
 
+import "time"
+
 type UserRes struct {
 	ID       int    
 	Username string 
 	Email    string 
 	IsAdmin  bool   
-	CreatedAt string
+	CreatedAt time.Time
 }

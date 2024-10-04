@@ -21,4 +21,16 @@ proto-books:
     --go-grpc_out=books-service/api/pb --go-grpc_opt=paths=source_relative \
     books-service/api/pb/api.proto
 
-.PHONY: docker-compose-db goose goose-create proto-books
+proto-users:
+	rm -f users-service/api/pb/*.go
+	protoc --proto_path=users-service/api/pb --go_out=users-service/api/pb --go_opt=paths=source_relative \
+	--go-grpc_out=users-service/api/pb --go-grpc_opt=paths=source_relative \
+	users-service/api/pb/api.proto
+
+proto-auth:
+	rm -f auth-service/api/pb/*.go
+	protoc --proto_path=auth-service/api/pb --go_out=auth-service/api/pb --go_opt=paths=source_relative \
+	--go-grpc_out=auth-service/api/pb --go-grpc_opt=paths=source_relative \
+	auth-service/api/pb/api.proto
+
+.PHONY: docker-compose-db goose goose-create proto-books proto-users proto-auth
