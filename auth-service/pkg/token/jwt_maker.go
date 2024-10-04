@@ -7,17 +7,9 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type JWTMaker struct {
-	secretKey string
-}
-
-func NewJWTMaker(secretKey string) *JWTMaker {
-	return &JWTMaker{secretKey}
-}
-
 // CreateToken creates a new JWT token.
-func (j *JWTMaker) CreateToken(id int, username string, email string, isAdmin bool, duration time.Duration) (string, *UserClaims, error) {
-	claims, err := NewUserClaims(id, username, email, isAdmin, duration)
+func CreateToken(secretKey string, claim UserClaims) (string, error) {
+	claims, err := NewUserClaims(claim)
 	if err != nil {
 		return "", nil, err
 	}
@@ -32,13 +24,13 @@ func (j *JWTMaker) CreateToken(id int, username string, email string, isAdmin bo
 }
 
 // VerifyToken verifies the JWT token.
-func (j *JWTMaker) VerifyToken(tokenStr string) (*UserClaims, error) {
+func VerifyToken(tokenStr, secretKey string) (*UserClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(j.secretKey), nil
+		return []byte(secretKey), nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error parsing token: %w", err)

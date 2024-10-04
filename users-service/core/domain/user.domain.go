@@ -3,7 +3,7 @@ package domain
 import "time"
 
 type User struct {
-	ID        int    
+	ID        uint    
 	Username  string 
 	Password  string
 	Email     string 

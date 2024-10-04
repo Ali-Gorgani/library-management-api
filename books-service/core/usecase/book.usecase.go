@@ -19,7 +19,7 @@ func NewBookUseCase() *BookUsecase {
 }
 
 func (b *BookUsecase) AddBook(ctx context.Context, book *domain.Book) (*domain.Book, error) {
-	addedBook, err := b.AddBook(ctx, book)
+	addedBook, err := b.bookRepository.AddBook(ctx, book)
 	if err != nil {
 		return &domain.Book{}, err
 	}

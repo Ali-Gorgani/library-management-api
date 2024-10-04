@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package pb;
+package proto;
 
 option go_package = "github.com/Ali-Gorgani/library-management-api/books-service/api/pb";
 

@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.27.1
-// source: api.proto
+// source: book.proto
 
 package pb
 
@@ -19,16 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	BookService_AddBook_FullMethodName        = "/pb.BookService/AddBook"
-	BookService_GetBooks_FullMethodName       = "/pb.BookService/GetBooks"
-	BookService_GetBook_FullMethodName        = "/pb.BookService/GetBook"
-	BookService_UpdateBook_FullMethodName     = "/pb.BookService/UpdateBook"
-	BookService_DeleteBook_FullMethodName     = "/pb.BookService/DeleteBook"
-	BookService_BorrowBook_FullMethodName     = "/pb.BookService/BorrowBook"
-	BookService_ReturnBook_FullMethodName     = "/pb.BookService/ReturnBook"
-	BookService_SearchBooks_FullMethodName    = "/pb.BookService/SearchBooks"
-	BookService_CategoryBooks_FullMethodName  = "/pb.BookService/CategoryBooks"
-	BookService_AvailableBooks_FullMethodName = "/pb.BookService/AvailableBooks"
+	BookService_AddBook_FullMethodName        = "/proto.BookService/AddBook"
+	BookService_GetBooks_FullMethodName       = "/proto.BookService/GetBooks"
+	BookService_GetBook_FullMethodName        = "/proto.BookService/GetBook"
+	BookService_UpdateBook_FullMethodName     = "/proto.BookService/UpdateBook"
+	BookService_DeleteBook_FullMethodName     = "/proto.BookService/DeleteBook"
+	BookService_BorrowBook_FullMethodName     = "/proto.BookService/BorrowBook"
+	BookService_ReturnBook_FullMethodName     = "/proto.BookService/ReturnBook"
+	BookService_SearchBooks_FullMethodName    = "/proto.BookService/SearchBooks"
+	BookService_CategoryBooks_FullMethodName  = "/proto.BookService/CategoryBooks"
+	BookService_AvailableBooks_FullMethodName = "/proto.BookService/AvailableBooks"
 )
 
 // BookServiceClient is the client API for BookService service.
@@ -422,7 +422,7 @@ type BookService_AvailableBooksServer = grpc.ServerStreamingServer[BookRes]
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var BookService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "pb.BookService",
+	ServiceName: "proto.BookService",
 	HandlerType: (*BookServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -472,5 +472,5 @@ var BookService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "api.proto",
+	Metadata: "book.proto",
 }
