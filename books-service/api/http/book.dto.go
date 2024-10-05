@@ -3,15 +3,15 @@ package http
 import "time"
 
 type BookRes struct {
-	ID            int       `json:"id"`
+	ID            uint      `json:"id"`
 	Title         string    `json:"title"`
 	Author        string    `json:"author"`
 	Category      string    `json:"category"`
 	Subject       string    `json:"subject"`
 	Genre         string    `json:"genre"`
-	PublishedYear int       `json:"published_year"`
+	PublishedYear uint      `json:"published_year"`
 	Available     bool      `json:"available"`
-	BorrowerID    *int      `json:"borrower_id"`
+	BorrowerID    uint      `json:"borrower_id"`
 	CreatedAt     time.Time `json:"created_at"`
 }
 
@@ -21,50 +21,37 @@ type AddBookReq struct {
 	Category      string `json:"category"`
 	Subject       string `json:"subject"`
 	Genre         string `json:"genre"`
-	PublishedYear int    `json:"published_year"`
+	PublishedYear uint   `json:"published_year"`
 }
 
 type GetBooksReq struct{}
 
 type GetBookReq struct {
-	ID int
-}
-
-type UpdateBookReqToBind struct {
-	Title         string `json:"title"`
-	Author        string `json:"author"`
-	Category      string `json:"category"`
-	Subject       string `json:"subject"`
-	Genre         string `json:"genre"`
-	PublishedYear int    `json:"published_year"`
-	Available     bool   `json:"available"`
-	BorrowerID    *int   `json:"borrower_id"`
+	ID uint
 }
 
 type UpdateBookReq struct {
-	ID        int
+	ID            uint
 	Title         string `json:"title"`
 	Author        string `json:"author"`
 	Category      string `json:"category"`
 	Subject       string `json:"subject"`
 	Genre         string `json:"genre"`
-	PublishedYear int    `json:"published_year"`
+	PublishedYear uint   `json:"published_year"`
 	Available     bool   `json:"available"`
-	BorrowerID    *int   `json:"borrower_id"`
+	BorrowerID    uint   `json:"borrower_id"`
 }
 
 type DeleteBookReq struct {
-	ID int
+	ID uint
 }
 
 type BorrowBookReq struct {
-	ID     int  `json:"book_id"`
-	BorrowerID *int `json:"borrower_id"`
+	ID uint
 }
 
 type ReturnBookReq struct {
-	ID     int  `json:"book_id"`
-	BorrowerID *int `json:"borrower_id"`
+	ID uint
 }
 
 type SearchBooksReq struct {

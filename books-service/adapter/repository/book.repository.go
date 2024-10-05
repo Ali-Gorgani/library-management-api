@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"library-management-api/books-service/core/domain"
 	"library-management-api/books-service/core/ports"
 	"library-management-api/books-service/init/database"
@@ -20,76 +21,89 @@ func NewBookRepository() ports.BookRepository {
 	}
 }
 
-// Create implements ports.BookRepository.
-func (b *BookRepository) AddBook(ctx context.Context, book *domain.Book) (*domain.Book, error) {
-	var addedBook domain.Book
-	query := "INSERT INTO books (title, author, category, subject, genre, published_year) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *"
-	row := b.db.QueryRow(query, book.Title, book.Author, book.Category, book.Subject, book.Genre, book.PublishedYear)
+// AddBook implements ports.BookRepository.
+func (b *BookRepository) AddBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+	var addedBook Book
+	mappedBook := MapBookDomainToBookEntity(book)
+
+	query := "INSERT INTO books (title, author, category, subject, genre, published_year, available, borrower_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *"
+	row := b.db.QueryRow(query, mappedBook.Title, mappedBook.Author, mappedBook.Category, mappedBook.Subject, mappedBook.Genre, mappedBook.PublishedYear, mappedBook.Available, mappedBook.BorrowerID)
 	err := row.Scan(&addedBook.ID, &addedBook.Title, &addedBook.Author, &addedBook.Category, &addedBook.Subject, &addedBook.Genre, &addedBook.PublishedYear, &addedBook.Available, &addedBook.BorrowerID, &addedBook.CreatedAt)
 	if err != nil {
-		return &domain.Book{}, err
+		return domain.Book{}, err
 	}
-	return &addedBook, nil
+	res := MapBookEntityToBookDomain(addedBook)
+	return res, nil
 }
 
 // GetBooks implements ports.BookRepository.
-func (b *BookRepository) GetBooks(ctx context.Context) ([]*domain.Book, error) {
-	var books []*domain.Book
+func (b *BookRepository) GetBooks(ctx context.Context) ([]domain.Book, error) {
+	var books []Book
 
 	rows, err := b.db.Query("SELECT * FROM books")
 	if err != nil {
-		return nil, err
+		return []domain.Book{}, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
+
 	for rows.Next() {
-		book := new(domain.Book)
+		var book Book
 		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Category, &book.Subject, &book.Genre, &book.PublishedYear, &book.Available, &book.BorrowerID, &book.CreatedAt)
 		if err != nil {
-			return nil, err
+			return []domain.Book{}, err
 		}
 		books = append(books, book)
 	}
-	return books, nil
+	res := MapBooksEntityToBooksDomain(books)
+	return res, nil
 }
 
 // GetBook implements ports.BookRepository.
-func (b *BookRepository) GetBook(ctx context.Context, book *domain.Book) (*domain.Book, error) {
-	var foundBook domain.Book
+func (b *BookRepository) GetBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+	var foundBook Book
 
 	query := "SELECT * FROM books WHERE id=$1"
 	row := b.db.QueryRow(query, book.ID)
 	err := row.Scan(&foundBook.ID, &foundBook.Title, &foundBook.Author, &foundBook.Category, &foundBook.Subject, &foundBook.Genre, &foundBook.PublishedYear, &foundBook.Available, &foundBook.BorrowerID, &foundBook.CreatedAt)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return &domain.Book{}, errorhandler.ErrBookNotFound
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Book{}, errorhandler.ErrBookNotFound
 		}
-		return &domain.Book{}, err
+		return domain.Book{}, err
 	}
-	return &foundBook, nil
+	res := MapBookEntityToBookDomain(foundBook)
+	return res, nil
 }
 
 // UpdateBook implements ports.BookRepository.
-func (b *BookRepository) UpdateBook(ctx context.Context, book *domain.Book) (*domain.Book, error) {
-	var updatedBook domain.Book
+func (b *BookRepository) UpdateBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+	var updatedBook Book
 
+	mappedBook := MapBookDomainToBookEntity(book)
 	query := "UPDATE books SET title=$1, author=$2, category=$3, subject=$4, genre=$5, published_year=$6, available=$7, borrower_id=$8 WHERE id=$9 RETURNING *"
-	row := b.db.QueryRow(query, book.Title, book.Author, book.Category, book.Subject, book.Genre, book.PublishedYear, book.Available, book.BorrowerID, book.ID)
+	row := b.db.QueryRow(query, mappedBook.Title, mappedBook.Author, mappedBook.Category, mappedBook.Subject, mappedBook.Genre, mappedBook.PublishedYear, mappedBook.Available, mappedBook.BorrowerID, mappedBook.ID)
 	err := row.Scan(&updatedBook.ID, &updatedBook.Title, &updatedBook.Author, &updatedBook.Category, &updatedBook.Subject, &updatedBook.Genre, &updatedBook.PublishedYear, &updatedBook.Available, &updatedBook.BorrowerID, &updatedBook.CreatedAt)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return &domain.Book{}, errorhandler.ErrBookNotFound
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Book{}, errorhandler.ErrBookNotFound
 		}
-		return &domain.Book{}, err
+		return domain.Book{}, err
 	}
-	return &updatedBook, nil
+	res := MapBookEntityToBookDomain(updatedBook)
+	return res, nil
 }
 
 // DeleteBook implements ports.BookRepository.
-func (b *BookRepository) DeleteBook(ctx context.Context, book *domain.Book) error {
+func (b *BookRepository) DeleteBook(ctx context.Context, book domain.Book) error {
 	query := "DELETE FROM books WHERE id=$1"
 	_, err := b.db.Exec(query, book.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return errorhandler.ErrBookNotFound
 		}
 		return err
@@ -98,98 +112,121 @@ func (b *BookRepository) DeleteBook(ctx context.Context, book *domain.Book) erro
 }
 
 // SearchBooks implements ports.BookRepository.
-func (b *BookRepository) SearchBooks(ctx context.Context, book *domain.Book) ([]*domain.Book, error) {
-	var books []*domain.Book
+func (b *BookRepository) SearchBooks(ctx context.Context, book domain.Book) ([]domain.Book, error) {
+	var books []Book
+
+	mappedBook := MapBookDomainToBookEntity(book)
 
 	// Build the SQL query dynamically based on which parameters are provided
-	query := "SELECT id, title, author, category, subject, genre, published_year, available, borrower_id, created_at FROM books WHERE 1=1"
+	query := "SELECT * FROM books WHERE TRUE"
 	var args []interface{}
 	argCounter := 1
 
 	// Add conditions based on provided search parameters
-	if book.Title != "" {
+	if mappedBook.Title.Valid {
 		query += " AND title ILIKE $" + strconv.Itoa(argCounter)
-		args = append(args, "%"+book.Title+"%") // Wildcard for partial match
+		args = append(args, mappedBook.Title.String)
 		argCounter++
 	}
-	if book.Author != "" {
+	if mappedBook.Author.Valid {
 		query += " AND author ILIKE $" + strconv.Itoa(argCounter)
-		args = append(args, "%"+book.Author+"%")
+		args = append(args, mappedBook.Author.String)
 		argCounter++
 	}
-	if book.Category != "" {
+	if mappedBook.Category.Valid {
 		query += " AND category ILIKE $" + strconv.Itoa(argCounter)
-		args = append(args, "%"+book.Category+"%")
+		args = append(args, mappedBook.Category.String)
 		argCounter++
 	}
 
 	rows, err := b.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return []domain.Book{}, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
 	// Iterate over the rows and scan data into a new instance of book for each row
 	for rows.Next() {
-		book := new(domain.Book)
+		var book Book
 		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Category, &book.Subject, &book.Genre, &book.PublishedYear, &book.Available, &book.BorrowerID, &book.CreatedAt)
 		if err != nil {
-			return nil, err
+			return []domain.Book{}, err
 		}
 		books = append(books, book)
 	}
-	return books, nil
+	res := MapBooksEntityToBooksDomain(books)
+	return res, nil
 }
 
 // CategoryBooks implements ports.BookRepository.
-func (b *BookRepository) CategoryBooks(ctx context.Context, book *domain.Book) ([]*domain.Book, error) {
-	var books []*domain.Book
+func (b *BookRepository) CategoryBooks(ctx context.Context, book domain.Book) ([]domain.Book, error) {
+	var books []Book
 	var categoryType, categoryValue string
 
+	mappedBook := MapBookDomainToBookEntity(book)
+
 	// Dynamically create the query based on the category type
-	if book.Subject != "" {
+	if mappedBook.Category.Valid {
 		categoryType = "subject"
-		categoryValue = book.Subject
-	} else if book.Genre != "" {
+		categoryValue = mappedBook.Subject.String
+	} else if mappedBook.Subject.Valid {
 		categoryType = "genre"
-		categoryValue = book.Genre
+		categoryValue = mappedBook.Genre.String
 	}
 
-	query := "SELECT id, title, author, category, subject, genre, published_year, available, borrower_id, created_at FROM books WHERE $1 = $2"
-	rows, err := b.db.QueryContext(ctx, query, categoryType, categoryValue)
+	query := "SELECT * FROM books WHERE $1=$2"
+	rows, err := b.db.Query(query, categoryType, categoryValue)
 	if err != nil {
-		return nil, err
+		return []domain.Book{}, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
 
-	// Fetch and scan rows into the books slice
 	for rows.Next() {
-		book := new(domain.Book)
+		var book Book
 		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Category, &book.Subject, &book.Genre, &book.PublishedYear, &book.Available, &book.BorrowerID, &book.CreatedAt)
 		if err != nil {
-			return nil, err
+			return []domain.Book{}, err
 		}
 		books = append(books, book)
 	}
-	return books, nil
+	res := MapBooksEntityToBooksDomain(books)
+	return res, nil
 }
 
 // AvailableBooks implements ports.BookRepository.
-func (b *BookRepository) AvailableBooks(ctx context.Context) ([]*domain.Book, error) {
-	var books []*domain.Book
+func (b *BookRepository) AvailableBooks(ctx context.Context) ([]domain.Book, error) {
+	var books []Book
 
-	rows, err := b.db.Query("SELECT * FROM books WHERE available=true")
+	query := "SELECT * FROM books WHERE available=true"
+	rows, err := b.db.Query(query)
 	if err != nil {
-		return nil, err
+		return []domain.Book{}, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
+
 	for rows.Next() {
-		book := new(domain.Book)
+		var book Book
 		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Category, &book.Subject, &book.Genre, &book.PublishedYear, &book.Available, &book.BorrowerID, &book.CreatedAt)
 		if err != nil {
-			return nil, err
+			return []domain.Book{}, err
 		}
 		books = append(books, book)
 	}
-	return books, nil
+	res := MapBooksEntityToBooksDomain(books)
+	return res, nil
 }

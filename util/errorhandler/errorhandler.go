@@ -13,9 +13,9 @@ var (
 )
 
 var (
-	ErrSessionNotFound  = errors.New("Session not found")
-	ErrSessionRevoked   = errors.New("Session is revoked")
-	ErrInvalidSession   = errors.New("Session is invalid")
+	ErrSessionNotFound  = errors.New("session not found")
+	ErrSessionRevoked   = errors.New("session is revoked")
+	ErrInvalidSession   = errors.New("session is invalid")
 	ErrMissingSessionID = errors.New("missing Session ID")
 )
 
@@ -24,9 +24,9 @@ var (
 	ErrBookAlreadyBorrowed  = errors.New("book is already borrowed")
 	ErrBookAlreadyAvailable = errors.New("book is already available")
 	ErrBorrowerIDMismatch   = errors.New("borrower ID does not match")
-	ErrInvalidCategoryType  = errors.New("invalid category type")
+	ErrInvalidCategoryType  = errors.New("invalid category type: must be one of 'subject' or 'genre'")
 	ErrEmptyCategoryValue   = errors.New("category value cannot be empty")
-	ErrInvalidSearchQuery   = errors.New("invalid search query")
+	ErrInvalidSearchQuery   = errors.New("at least one of the fields must be provided")
 )
 
 func ErrorResponse(status int, err error) gin.H {

@@ -14,7 +14,7 @@ type Book struct {
 	Genre         sql.NullString
 	PublishedYear uint
 	Available     sql.NullBool
-	BorrowerID    uint
+	BorrowerID    sql.NullInt32
 	CreatedAt     sql.NullTime
 }
 
@@ -28,7 +28,7 @@ func MapBookEntityToBookDomain(book Book) domain.Book {
 		Genre:         book.Genre.String,
 		PublishedYear: book.PublishedYear,
 		Available:     book.Available.Bool,
-		BorrowerID:    book.BorrowerID,
+		BorrowerID:    uint(book.BorrowerID.Int32),
 		CreatedAt:     book.CreatedAt.Time,
 	}
 }
@@ -51,7 +51,7 @@ func MapBookDomainToBookEntity(book domain.Book) Book {
 		Genre:         sql.NullString{String: book.Genre, Valid: book.Genre != ""},
 		PublishedYear: book.PublishedYear,
 		Available:     sql.NullBool{Bool: book.Available, Valid: true},
-		BorrowerID:    book.BorrowerID,
+		BorrowerID:    sql.NullInt32{Int32: int32(book.BorrowerID), Valid: book.BorrowerID > 0},
 		CreatedAt:     sql.NullTime{Time: book.CreatedAt, Valid: true},
 	}
 }

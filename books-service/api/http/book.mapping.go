@@ -2,11 +2,11 @@ package http
 
 import "library-management-api/books-service/core/domain"
 
-func MapBookToBookRes(book *domain.Book) *BookRes {
-	return &BookRes{
+func MapDomainBookToDtoBookRes(book domain.Book) BookRes {
+	return BookRes{
 		ID:            book.ID,
 		Title:         book.Title,
-		Author: 	  book.Author,
+		Author:        book.Author,
 		Category:      book.Category,
 		Subject:       book.Subject,
 		Genre:         book.Genre,
@@ -17,16 +17,16 @@ func MapBookToBookRes(book *domain.Book) *BookRes {
 	}
 }
 
-func MapBooksToBooksRes(books []*domain.Book) []*BookRes {
-	var booksRes []*BookRes
+func MapDomainBooksToDtoBooksRes(books []domain.Book) []BookRes {
+	var booksRes []BookRes
 	for _, book := range books {
-		booksRes = append(booksRes, MapBookToBookRes(book))
+		booksRes = append(booksRes, MapDomainBookToDtoBookRes(book))
 	}
 	return booksRes
 }
 
-func MapAddBookReqToBook(req *AddBookReq) *domain.Book {
-	return &domain.Book{
+func MapDtoAddBookReqToDomainBook(req AddBookReq) domain.Book {
+	return domain.Book{
 		Title:         req.Title,
 		Author:        req.Author,
 		Category:      req.Category,
@@ -36,14 +36,14 @@ func MapAddBookReqToBook(req *AddBookReq) *domain.Book {
 	}
 }
 
-func MapGetBookReqToBook(req *GetBookReq) *domain.Book {
-	return &domain.Book{
+func MapDtoGetBookReqToDomainBook(req GetBookReq) domain.Book {
+	return domain.Book{
 		ID: req.ID,
 	}
 }
 
-func MapUpdateBookReqToBook(req *UpdateBookReq) *domain.Book {
-	return &domain.Book{
+func MapDtoUpdateBookReqToDomainBook(req UpdateBookReq) domain.Book {
+	return domain.Book{
 		ID:            req.ID,
 		Title:         req.Title,
 		Author:        req.Author,
@@ -56,41 +56,39 @@ func MapUpdateBookReqToBook(req *UpdateBookReq) *domain.Book {
 	}
 }
 
-func MapDeleteBookReqToBook(req *DeleteBookReq) *domain.Book {
-	return &domain.Book{
+func MapDtoDeleteBookReqToDomainBook(req DeleteBookReq) domain.Book {
+	return domain.Book{
 		ID: req.ID,
 	}
 }
 
-func MapBorrowBookReqToBook(req *BorrowBookReq) *domain.Book {
-	return &domain.Book{
-		ID:         req.ID,
-		BorrowerID: req.BorrowerID,
+func MapDtoBorrowBookReqToDomainBook(req BorrowBookReq) domain.Book {
+	return domain.Book{
+		ID: req.ID,
 	}
 }
 
-func MapReturnBookReqToBook(req *ReturnBookReq) *domain.Book {
-	return &domain.Book{
-		ID:         req.ID,
-		BorrowerID: req.BorrowerID,
+func MapDtoReturnBookReqToDomainBook(req ReturnBookReq) domain.Book {
+	return domain.Book{
+		ID: req.ID,
 	}
 }
 
-func MapSearchBooksReqToBook(req *SearchBooksReq) *domain.Book {
-	return &domain.Book{
+func MapDtoSearchBooksReqToDomainBook(req SearchBooksReq) domain.Book {
+	return domain.Book{
 		Title:    req.Title,
 		Author:   req.Author,
 		Category: req.Category,
 	}
 }
 
-func MapCategoryBooksReqToBook(req *CategoryBooksReq) *domain.Book {
+func MapDtoCategoryBooksReqToDomainBook(req CategoryBooksReq) domain.Book {
 	if req.CategoryType == "subject" {
-		return &domain.Book{
+		return domain.Book{
 			Subject: req.CategoryValue,
 		}
 	}
-	return &domain.Book{
+	return domain.Book{
 		Genre: req.CategoryValue,
 	}
 }

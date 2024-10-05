@@ -1,7 +1,7 @@
 package http
 
 import (
-	"library-management-api/auth-service/pkg/token"
+	"errors"
 	"library-management-api/books-service/core/usecase"
 	"library-management-api/util/errorhandler"
 	"net/http"
@@ -20,7 +20,7 @@ func NewBookController() *BookController {
 	}
 }
 
-func (b *BookController) AddBook(c *gin.Context) {
+func (bc *BookController) AddBook(c *gin.Context) {
 	var book AddBookReq
 
 	if err := c.ShouldBindJSON(&book); err != nil {
@@ -28,26 +28,32 @@ func (b *BookController) AddBook(c *gin.Context) {
 		return
 	}
 
-	addedBook, err := b.bookUseCase.AddBook(c.Request.Context(), MapAddBookReqToBook(&book))
+	addedBook, err := bc.bookUseCase.AddBook(c.Request.Context(), MapDtoAddBookReqToDomainBook(book))
 	if err != nil {
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		}
 		c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, err))
 		return
 	}
-	res := MapBookToBookRes(addedBook)
+	res := MapDomainBookToDtoBookRes(addedBook)
 	c.JSON(http.StatusCreated, res)
 }
 
-func (b *BookController) GetBooks(c *gin.Context) {
-	books, err := b.bookUseCase.GetBooks(c.Request.Context())
+func (bc *BookController) GetBooks(c *gin.Context) {
+	books, err := bc.bookUseCase.GetBooks(c.Request.Context())
 	if err != nil {
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		}
 		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		return
 	}
-	res := MapBooksToBooksRes(books)
+	res := MapDomainBooksToDtoBooksRes(books)
 	c.JSON(http.StatusOK, res)
 }
 
-func (b *BookController) GetBook(c *gin.Context) {
+func (bc *BookController) GetBook(c *gin.Context) {
 	bookIDStr := c.Param("id")
 	bookID, err := strconv.Atoi(bookIDStr)
 	if err != nil {
@@ -55,24 +61,28 @@ func (b *BookController) GetBook(c *gin.Context) {
 		return
 	}
 
-	getBookReq := &GetBookReq{
-		ID: bookID,
+	getBookReq := GetBookReq{
+		ID: uint(bookID),
 	}
 
-	foundBook, err := b.bookUseCase.GetBook(c.Request.Context(), MapGetBookReqToBook(getBookReq))
+	foundBook, err := bc.bookUseCase.GetBook(c.Request.Context(), MapDtoGetBookReqToDomainBook(getBookReq))
 	if err != nil {
-		if err.Error() == errorhandler.ErrBookNotFound.Error() {
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+			return
+		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrBookNotFound))
 			return
+		} else {
+			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
+			return
 		}
-		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
-		return
 	}
-	res := MapBookToBookRes(foundBook)
+	res := MapDomainBookToDtoBookRes(foundBook)
 	c.JSON(http.StatusOK, res)
 }
 
-func (b *BookController) UpdateBook(c *gin.Context) {
+func (bc *BookController) UpdateBook(c *gin.Context) {
 	bookIDStr := c.Param("id")
 	bookID, err := strconv.Atoi(bookIDStr)
 	if err != nil {
@@ -80,38 +90,31 @@ func (b *BookController) UpdateBook(c *gin.Context) {
 		return
 	}
 
-	var book UpdateBookReqToBind
-	if err := c.ShouldBindJSON(&book); err != nil {
+	var updateBookReq UpdateBookReq
+	if err := c.ShouldBindJSON(&updateBookReq); err != nil {
 		c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, err))
 		return
 	}
+	updateBookReq.ID = uint(bookID)
 
-	updateBookReq := &UpdateBookReq{
-		ID:            bookID,
-		Title:         book.Title,
-		Author:        book.Author,
-		Category:      book.Category,
-		Subject:       book.Subject,
-		Genre:         book.Genre,
-		PublishedYear: book.PublishedYear,
-		Available:     book.Available,
-		BorrowerID:    book.BorrowerID,
-	}
-
-	updatedBook, err := b.bookUseCase.UpdateBook(c.Request.Context(), MapUpdateBookReqToBook(updateBookReq))
+	updatedBook, err := bc.bookUseCase.UpdateBook(c.Request.Context(), MapDtoUpdateBookReqToDomainBook(updateBookReq))
 	if err != nil {
-		if err.Error() == errorhandler.ErrBookNotFound.Error() {
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+			return
+		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrBookNotFound))
 			return
+		} else {
+			c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, err))
+			return
 		}
-		c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, err))
-		return
 	}
-	res := MapBookToBookRes(updatedBook)
+	res := MapDomainBookToDtoBookRes(updatedBook)
 	c.JSON(http.StatusOK, res)
 }
 
-func (b *BookController) DeleteBook(c *gin.Context) {
+func (bc *BookController) DeleteBook(c *gin.Context) {
 	bookIDStr := c.Param("id")
 	bookID, err := strconv.Atoi(bookIDStr)
 	if err != nil {
@@ -119,24 +122,28 @@ func (b *BookController) DeleteBook(c *gin.Context) {
 		return
 	}
 
-	deleteBookReq := &DeleteBookReq{
-		ID: bookID,
+	deleteBookReq := DeleteBookReq{
+		ID: uint(bookID),
 	}
 
-	err = b.bookUseCase.DeleteBook(c.Request.Context(), MapDeleteBookReqToBook(deleteBookReq))
+	err = bc.bookUseCase.DeleteBook(c.Request.Context(), MapDtoDeleteBookReqToDomainBook(deleteBookReq))
 	if err != nil {
-		if err.Error() == errorhandler.ErrBookNotFound.Error() {
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+			return
+		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrBookNotFound))
 			return
+		} else {
+			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
+			return
 		}
-		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
-		return
 	}
 
 	c.JSON(http.StatusOK, nil)
 }
 
-func (b *BookController) BorrowBook(c *gin.Context) {
+func (bc *BookController) BorrowBook(c *gin.Context) {
 	bookIDStr := c.Param("id")
 	bookID, err := strconv.Atoi(bookIDStr)
 	if err != nil {
@@ -144,30 +151,31 @@ func (b *BookController) BorrowBook(c *gin.Context) {
 		return
 	}
 
-	claims := c.Value("authKey").(*token.UserClaims)
-
-	borrowBook := &BorrowBookReq{
-		ID:         bookID,
-		BorrowerID: &claims.ID,
+	borrowBookReq := BorrowBookReq{
+		ID: uint(bookID),
 	}
 
-	borrowedBook, err := b.bookUseCase.BorrowBook(c.Request.Context(), MapBorrowBookReqToBook(borrowBook))
+	borrowedBook, err := bc.bookUseCase.BorrowBook(c.Request.Context(), MapDtoBorrowBookReqToDomainBook(borrowBookReq))
 	if err != nil {
-		switch err.Error() {
-		case errorhandler.ErrBookNotFound.Error():
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+			return
+		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
 			c.JSON(http.StatusConflict, errorhandler.ErrorResponse(http.StatusConflict, errorhandler.ErrBookNotFound))
-		case errorhandler.ErrBookAlreadyBorrowed.Error():
+			return
+		} else if errors.Is(err, errorhandler.ErrBookAlreadyBorrowed) {
 			c.JSON(http.StatusConflict, errorhandler.ErrorResponse(http.StatusConflict, errorhandler.ErrBookAlreadyBorrowed))
-		default:
+			return
+		} else {
 			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
+			return
 		}
-		return
 	}
-	res := MapBookToBookRes(borrowedBook)
+	res := MapDomainBookToDtoBookRes(borrowedBook)
 	c.JSON(http.StatusOK, res)
 }
 
-func (b *BookController) ReturnBook(c *gin.Context) {
+func (bc *BookController) ReturnBook(c *gin.Context) {
 	bookIDStr := c.Param("id")
 	bookID, err := strconv.Atoi(bookIDStr)
 	if err != nil {
@@ -175,60 +183,61 @@ func (b *BookController) ReturnBook(c *gin.Context) {
 		return
 	}
 
-	claims := c.Value("authKey").(*token.UserClaims)
-
-	returnBook := &ReturnBookReq{
-		ID:         bookID,
-		BorrowerID: &claims.ID,
+	returnBookReq := ReturnBookReq{
+		ID: uint(bookID),
 	}
 
-	returnedBook, err := b.bookUseCase.ReturnBook(c.Request.Context(), MapReturnBookReqToBook(returnBook))
+	returnedBook, err := bc.bookUseCase.ReturnBook(c.Request.Context(), MapDtoReturnBookReqToDomainBook(returnBookReq))
 	if err != nil {
-		switch err.Error() {
-		case errorhandler.ErrBookNotFound.Error():
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+			return
+		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
 			c.JSON(http.StatusConflict, errorhandler.ErrorResponse(http.StatusConflict, errorhandler.ErrBookNotFound))
-		case errorhandler.ErrBookAlreadyAvailable.Error():
+			return
+		} else if errors.Is(err, errorhandler.ErrBookAlreadyAvailable) {
 			c.JSON(http.StatusConflict, errorhandler.ErrorResponse(http.StatusConflict, errorhandler.ErrBookAlreadyAvailable))
-		case errorhandler.ErrBorrowerIDMismatch.Error():
+			return
+		} else if errors.Is(err, errorhandler.ErrBorrowerIDMismatch) {
 			c.JSON(http.StatusConflict, errorhandler.ErrorResponse(http.StatusConflict, errorhandler.ErrBorrowerIDMismatch))
-		default:
+			return
+		} else {
 			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
+			return
 		}
-		return
 	}
-	res := MapBookToBookRes(returnedBook)
+	res := MapDomainBookToDtoBookRes(returnedBook)
 	c.JSON(http.StatusOK, res)
 }
 
 // SearchBooks handles GET requests for searching books by title, author, or category
-func (b *BookController) SearchBooks(c *gin.Context) {
+func (bc *BookController) SearchBooks(c *gin.Context) {
 	title := c.Query("title")
 	author := c.Query("author")
 	category := c.Query("category")
 
-	// Check if at least one of the fields is provided
-	if title == "" && author == "" && category == "" {
-		c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, errorhandler.ErrInvalidSearchQuery))
-		return
-	}
-
-	searchBooksReq := &SearchBooksReq{
+	searchBooksReq := SearchBooksReq{
 		Title:    title,
 		Author:   author,
 		Category: category,
 	}
 
 	// Call the service layer with all non-empty query parameters
-	books, err := b.bookUseCase.SearchBooks(c.Request.Context(), MapSearchBooksReqToBook(searchBooksReq))
+	books, err := bc.bookUseCase.SearchBooks(c.Request.Context(), MapDtoSearchBooksReqToDomainBook(searchBooksReq))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
-		return
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		} else if errors.Is(err, errorhandler.ErrInvalidSearchQuery) {
+			c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, errorhandler.ErrInvalidSearchQuery))
+		} else {
+			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
+		}
 	}
-	res := MapBooksToBooksRes(books)
+	res := MapDomainBooksToDtoBooksRes(books)
 	c.JSON(http.StatusOK, res)
 }
 
-func (b *BookController) CategoryBooks(c *gin.Context) {
+func (bc *BookController) CategoryBooks(c *gin.Context) {
 	categoryType := c.Query("type")
 	categoryValue := c.Query("value")
 
@@ -242,26 +251,32 @@ func (b *BookController) CategoryBooks(c *gin.Context) {
 		return
 	}
 
-	categoryBooksReq := &CategoryBooksReq{
+	categoryBooksReq := CategoryBooksReq{
 		CategoryType:  categoryType,
 		CategoryValue: categoryValue,
 	}
 
-	books, err := b.bookUseCase.CategoryBooks(c.Request.Context(), MapCategoryBooksReqToBook(categoryBooksReq))
+	books, err := bc.bookUseCase.CategoryBooks(c.Request.Context(), MapDtoCategoryBooksReqToDomainBook(categoryBooksReq))
 	if err != nil {
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		}
 		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		return
 	}
-	res := MapBooksToBooksRes(books)
+	res := MapDomainBooksToDtoBooksRes(books)
 	c.JSON(http.StatusOK, res)
 }
 
-func (b *BookController) AvailableBooks(c *gin.Context) {
-	books, err := b.bookUseCase.AvailableBooks(c.Request.Context())
+func (bc *BookController) AvailableBooks(c *gin.Context) {
+	books, err := bc.bookUseCase.AvailableBooks(c.Request.Context())
 	if err != nil {
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		}
 		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		return
 	}
-	res := MapBooksToBooksRes(books)
+	res := MapDomainBooksToDtoBooksRes(books)
 	c.JSON(http.StatusOK, res)
 }
