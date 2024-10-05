@@ -2,7 +2,6 @@ package http
 
 import (
 	"errors"
-	"library-management-api/auth-service/pkg/token"
 	"library-management-api/users-service/core/usecase"
 	"library-management-api/util/errorhandler"
 	"net/http"
@@ -23,32 +22,31 @@ func NewUserController() *UserController {
 
 func (uc *UserController) AddUser(c *gin.Context) {
 	var user AddUserReq
-
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, err))
 		return
 	}
 
-	addedUser, err := uc.userUseCase.AddUser(c.Request.Context(), MapAddUserReqToUser(&user))
+	addedUser, err := uc.userUseCase.AddUser(c.Request.Context(), MapDtoAddUserReqToDomainUser(user))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, err))
+		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		return
 	}
-	res := MapUserToUserRes(addedUser)
-
+	res := MapDomainUserToDtoUserRes(addedUser)
 	c.JSON(http.StatusCreated, res)
-
 }
 
 // GetUsers handles GET requests for retrieving all users
 func (uc *UserController) GetUsers(c *gin.Context) {
 	users, err := uc.userUseCase.GetUsers(c.Request.Context())
 	if err != nil {
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		}
 		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		return
 	}
-	res := MapUsersToUsersRes(users)
-
+	res := MapDomainUsersToDtoUsersRes(users)
 	c.JSON(http.StatusOK, res)
 }
 
@@ -61,20 +59,22 @@ func (uc *UserController) GetUser(c *gin.Context) {
 		return
 	}
 
-	getUserReq := &GetUserReq{
-		ID: userID,
+	getUserReq := GetUserReq{
+		ID: uint(userID),
 	}
-	
-	user, err := uc.userUseCase.GetUser(c.Request.Context(), MapGetUserReqToUser(getUserReq))
+
+	user, err := uc.userUseCase.GetUser(c.Request.Context(), MapDtoGetUserReqToDomainUser(getUserReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrUserNotFound) {
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		} else if errors.Is(err, errorhandler.ErrUserNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrUserNotFound))
 		} else {
 			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		}
 		return
 	}
-	res := MapUserToUserRes(user)
+	res := MapDomainUserToDtoUserRes(user)
 
 	c.JSON(http.StatusOK, res)
 }
@@ -88,37 +88,25 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	claims := c.Value("authKey").(*token.UserClaims)
-	if claims.ID != userID && !claims.IsAdmin {
-		c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
-		return
-	}
-
-	var user UpdateUserReqToBind
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var updateUserReq UpdateUserReq
+	if err := c.ShouldBindJSON(&updateUserReq); err != nil {
 		c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, err))
 		return
 	}
+	updateUserReq.ID = uint(userID)
 
-	updateUserReq := &UpdateUserReq{
-		ID:       userID,
-		Username: user.Username,
-		Password: user.Password,
-		Email:    user.Email,
-		IsAdmin:  user.IsAdmin,
-	}
-
-	updatedUser, err := uc.userUseCase.UpdateUser(c.Request.Context(), MapUpdateUserReqToUser(updateUserReq))
+	updatedUser, err := uc.userUseCase.UpdateUser(c.Request.Context(), MapDtoUpdateUserReqToDomainUser(updateUserReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrUserNotFound) {
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		} else if errors.Is(err, errorhandler.ErrUserNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrUserNotFound))
 		} else {
 			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		}
 		return
 	}
-	res := MapUserToUserRes(updatedUser)
-
+	res := MapDomainUserToDtoUserRes(updatedUser)
 	c.JSON(http.StatusOK, res)
 }
 
@@ -131,25 +119,20 @@ func (uc *UserController) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	claims := c.Value("authKey").(*token.UserClaims)
-	if claims.ID != userID && !claims.IsAdmin {
-		c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
-		return
-	}
-	
-	deleteUserReq := &DeleteUserReq{
-		ID: userID,
+	deleteUserReq := DeleteUserReq{
+		ID: uint(userID),
 	}
 
-	err = uc.userUseCase.DeleteUser(c.Request.Context(), MapDeleteUserReqToUser(deleteUserReq))
+	err = uc.userUseCase.DeleteUser(c.Request.Context(), MapDtoDeleteUserReqToDomainUser(deleteUserReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrUserNotFound) {
+		if errors.Is(err, errorhandler.ErrForbidden) {
+			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		} else if errors.Is(err, errorhandler.ErrUserNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrUserNotFound))
 		} else {
 			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		}
 		return
 	}
-
 	c.JSON(http.StatusNoContent, nil)
 }

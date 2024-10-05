@@ -22,80 +22,99 @@ func NewUserRepository() ports.UserRepository {
 }
 
 // AddUser implements ports.UserRepository.
-func (u UserRepository) AddUser(ctx context.Context, user *domain.User) (*domain.User, error) {
-	var addedUser UserRes
+func (u *UserRepository) AddUser(ctx context.Context, user domain.User) (domain.User, error) {
+	var addedUser User
 	hashedPassword := util.HashedPassword(user.Password)
+	mappedUser := MapUserDomainToUserEntity(domain.User{
+		ID:        user.ID,
+		Username:  user.Username,
+		Password:  hashedPassword,
+		Email:     user.Email,
+		IsAdmin:   user.IsAdmin,
+		CreatedAt: user.CreatedAt,
+	})
 
-	query := "INSERT INTO users (username, email, hashed_password, is_admin) VALUES ($1, $2, $3, $4) RETURNING id, username, email, is_admin, created_at"
-	row := u.db.QueryRow(query, user.Username, user.Email, hashedPassword, user.IsAdmin)
-	err := row.Scan(&addedUser.ID, &addedUser.Username, &addedUser.Email, &addedUser.IsAdmin, &addedUser.CreatedAt)
+	query := "INSERT INTO users (username, hashed_password, email, is_admin) VALUES ($1, $2, $3, $4) RETURNING *"
+	row := u.db.QueryRow(query, mappedUser.Username, mappedUser.HashedPassword, mappedUser.Email, mappedUser.IsAdmin)
+	err := row.Scan(&addedUser.ID, &addedUser.Username, &addedUser.HashedPassword, &addedUser.Email, &addedUser.IsAdmin, &addedUser.CreatedAt)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return &domain.User{}, errorhandler.ErrUserNotFound
-		}
-		return &domain.User{}, err
+		return domain.User{}, err
 	}
-	res := MapUserResToUser(&addedUser)
+	res := MapUserEntityToUserDomain(addedUser)
 	return res, nil
 }
 
 // GetUsers implements ports.UserRepository.
-func (u UserRepository) GetUsers(ctx context.Context) ([]*domain.User, error) {
-	var users []*UserRes
-
-	rows, err := u.db.Query("SELECT id, username, email, is_admin, created_at FROM users")
+func (u *UserRepository) GetUsers(ctx context.Context) ([]domain.User, error) {
+	var users []User
+	query := "SELECT * FROM users"
+	rows, err := u.db.Query(query)
 	if err != nil {
-		return nil, err
+		return []domain.User{}, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		user := new(UserRes)
-		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.CreatedAt)
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
 		if err != nil {
-			return nil, err
+			return
+		}
+	}(rows)
+
+	for rows.Next() {
+		var user User
+		err := rows.Scan(&user.ID, &user.Username, &user.HashedPassword, &user.Email, &user.IsAdmin, &user.CreatedAt)
+		if err != nil {
+			return []domain.User{}, err
 		}
 		users = append(users, user)
 	}
-	res := MapUsersResToUsers(users)
+	res := MapUsersEntityToUsersDomain(users)
 	return res, nil
 }
 
 // GetUser implements ports.UserRepository.
-func (u UserRepository) GetUser(ctx context.Context, user *domain.User) (*domain.User, error) {
-	var getUser UserRes
-	query := "SELECT id, username, email, is_admin, created_at FROM users WHERE id=$1"
+func (u *UserRepository) GetUser(ctx context.Context, user domain.User) (domain.User, error) {
+	var foundUser User
+	query := "SELECT * FROM users WHERE id=$1"
 	row := u.db.QueryRow(query, user.ID)
-	err := row.Scan(&getUser.ID, &getUser.Username, &getUser.Email, &getUser.IsAdmin, &getUser.CreatedAt)
+	err := row.Scan(&foundUser.ID, &foundUser.Username, &foundUser.HashedPassword, &foundUser.Email, &foundUser.IsAdmin, &foundUser.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &domain.User{}, errorhandler.ErrUserNotFound
+			return domain.User{}, errorhandler.ErrUserNotFound
 		}
-		return &domain.User{}, err
+		return domain.User{}, err
 	}
-	res := MapUserResToUser(&getUser)
+	res := MapUserEntityToUserDomain(foundUser)
 	return res, nil
 }
 
 // UpdateUser implements ports.UserRepository.
-func (u UserRepository) UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
-	var updatedUser UserRes
+func (u *UserRepository) UpdateUser(ctx context.Context, user domain.User) (domain.User, error) {
+	var updatedUser User
 	hashedPassword := util.HashedPassword(user.Password)
+	mappedUser := MapUserDomainToUserEntity(domain.User{
+		ID:        user.ID,
+		Username:  user.Username,
+		Password:  hashedPassword,
+		Email:     user.Email,
+		IsAdmin:   user.IsAdmin,
+		CreatedAt: user.CreatedAt,
+	})
 
-	query := "UPDATE users SET username=$1, email=$2, hashed_password=$3, is_admin=$4 WHERE id=$5 RETURNING id, username, email, is_admin, created_at"
-	row := u.db.QueryRow(query, user.Username, user.Email, hashedPassword, user.IsAdmin, user.ID)
-	err := row.Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Email, &updatedUser.IsAdmin, &updatedUser.CreatedAt)
+	query := "UPDATE users SET username=$1, hashed_password=$2, email=$3, is_admin=$4 WHERE id=$5 RETURNING *"
+	row := u.db.QueryRow(query, mappedUser.Username, mappedUser.HashedPassword, mappedUser.Email, mappedUser.IsAdmin, mappedUser.ID)
+	err := row.Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.HashedPassword, &updatedUser.Email, &updatedUser.IsAdmin, &updatedUser.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &domain.User{}, errorhandler.ErrUserNotFound
+			return domain.User{}, errorhandler.ErrUserNotFound
 		}
-		return &domain.User{}, err
+		return domain.User{}, err
 	}
-	res := MapUserResToUser(&updatedUser)
+	res := MapUserEntityToUserDomain(updatedUser)
 	return res, nil
 }
 
 // DeleteUser implements ports.UserRepository.
-func (u UserRepository) DeleteUser(ctx context.Context, user *domain.User) error {
+func (u *UserRepository) DeleteUser(ctx context.Context, user domain.User) error {
 	query := "DELETE FROM users WHERE id=$1"
 	_, err := u.db.Exec(query, user.ID)
 	if err != nil {

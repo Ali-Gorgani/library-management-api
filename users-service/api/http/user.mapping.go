@@ -2,8 +2,8 @@ package http
 
 import "library-management-api/users-service/core/domain"
 
-func MapUserToUserRes(user *domain.User) *UserRes {
-	return &UserRes{
+func MapDomainUserToDtoUserRes(user domain.User) UserRes {
+	return UserRes{
 		ID:        user.ID,
 		Username:  user.Username,
 		Email:     user.Email,
@@ -12,22 +12,16 @@ func MapUserToUserRes(user *domain.User) *UserRes {
 	}
 }
 
-func MapUsersToUsersRes(users []*domain.User) []*UserRes {
-	var usersRes []*UserRes
-	for _, u := range users {
-		usersRes = append(usersRes, &UserRes{
-			ID:        u.ID,
-			Username:  u.Username,
-			Email:     u.Email,
-			IsAdmin:   u.IsAdmin,
-			CreatedAt: u.CreatedAt,
-		})
+func MapDomainUsersToDtoUsersRes(users []domain.User) []UserRes {
+	var usersRes []UserRes
+	for _, user := range users {
+		usersRes = append(usersRes, MapDomainUserToDtoUserRes(user))
 	}
 	return usersRes
 }
 
-func MapAddUserReqToUser(req *AddUserReq) *domain.User {
-	return &domain.User{
+func MapDtoAddUserReqToDomainUser(req AddUserReq) domain.User {
+	return domain.User{
 		Username: req.Username,
 		Password: req.Password,
 		Email:    req.Email,
@@ -35,14 +29,14 @@ func MapAddUserReqToUser(req *AddUserReq) *domain.User {
 	}
 }
 
-func MapGetUserReqToUser(req *GetUserReq) *domain.User {
-	return &domain.User{
+func MapDtoGetUserReqToDomainUser(req GetUserReq) domain.User {
+	return domain.User{
 		ID: req.ID,
 	}
 }
 
-func MapUpdateUserReqToUser(req *UpdateUserReq) *domain.User {
-	return &domain.User{
+func MapDtoUpdateUserReqToDomainUser(req UpdateUserReq) domain.User {
+	return domain.User{
 		ID:       req.ID,
 		Username: req.Username,
 		Password: req.Password,
@@ -51,8 +45,8 @@ func MapUpdateUserReqToUser(req *UpdateUserReq) *domain.User {
 	}
 }
 
-func MapDeleteUserReqToUser(req *DeleteUserReq) *domain.User {
-	return &domain.User{
+func MapDtoDeleteUserReqToDomainUser(req DeleteUserReq) domain.User {
+	return domain.User{
 		ID: req.ID,
 	}
 }

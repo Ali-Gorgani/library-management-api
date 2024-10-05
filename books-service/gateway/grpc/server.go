@@ -1,17 +1,16 @@
 package main
 
 import (
-	"context"
 	"library-management-api/books-service/adapter/repository"
+	controller "library-management-api/books-service/api/grpc"
 	"library-management-api/books-service/core/ports"
 	"library-management-api/books-service/init/database"
 	"library-management-api/books-service/init/migrations"
-	pb "library-management-api/books-service/pkg/book"
+	pb "library-management-api/books-service/pkg/proto"
 	"net"
 
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
-	controller "library-management-api/books-service/api/grpc"
 )
 
 func main() {

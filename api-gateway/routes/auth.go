@@ -13,9 +13,9 @@ func AuthRoutes(r *gin.Engine) {
 	authController = http.NewAuthController()
 
 	r.POST("/login", authController.Login)
-	r.POST("/logout", middleware.UserAuthMiddleware(), authController.Logout)
+	r.POST("/logout", middleware.AuthMiddleware(), authController.Logout)
 
-	tokensGroup := r.Group("/tokens", middleware.UserAuthMiddleware())
+	tokensGroup := r.Group("/tokens", middleware.AuthMiddleware())
 	{
 		tokensGroup.POST("/refresh-token", authController.RefreshToken)
 		tokensGroup.POST("/revoke-token", authController.RevokeToken)

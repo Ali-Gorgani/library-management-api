@@ -10,7 +10,7 @@ type AddUserReq struct {
 }
 
 type UserRes struct {
-	ID        int       `json:"id"`
+	ID        uint      `json:"id"`
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
 	IsAdmin   bool      `json:"is_admin"`
@@ -20,18 +20,11 @@ type UserRes struct {
 type GetUsersReq struct{}
 
 type GetUserReq struct {
-	ID int
-}
-
-type UpdateUserReqToBind struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Email    string `json:"email"`
-	IsAdmin  bool   `json:"is_admin"`
+	ID uint
 }
 
 type UpdateUserReq struct {
-	ID       int
+	ID       uint
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Email    string `json:"email"`
@@ -39,7 +32,7 @@ type UpdateUserReq struct {
 }
 
 type DeleteUserReq struct {
-	ID int
+	ID uint
 }
 
 type DeleteUserRes struct{}

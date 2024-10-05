@@ -12,23 +12,17 @@ var bookController *http.BookController
 func BookRoutes(r *gin.Engine) {
 	bookController = http.NewBookController()
 
-	booksGroup := r.Group("/books")
+	booksGroup := r.Group("/books", middleware.AuthMiddleware())
 	{
-		userAccessGroup := booksGroup.Group("/", middleware.UserAuthMiddleware())
-		{
-			userAccessGroup.POST("/", bookController.AddBook)
-			userAccessGroup.GET("/", bookController.GetBooks)
-			userAccessGroup.POST("/borrow/:id", bookController.BorrowBook)
-			userAccessGroup.POST("/return/:id", bookController.ReturnBook)
-			userAccessGroup.GET("/search", bookController.SearchBooks)
-			userAccessGroup.GET("/category", bookController.CategoryBooks)
-			userAccessGroup.GET("/available", bookController.AvailableBooks)
-		}
-
-		adminAccessGroup := booksGroup.Group("/", middleware.AdminAuthMiddleware())
-		{
-			adminAccessGroup.PUT("/:id", bookController.UpdateBook)
-			adminAccessGroup.DELETE("/:id", bookController.DeleteBook)
-		}
+		booksGroup.POST("/", bookController.AddBook)
+		booksGroup.GET("/", bookController.GetBooks)
+		booksGroup.GET("/:id", bookController.GetBook)
+		booksGroup.PUT("/:id", bookController.UpdateBook)
+		booksGroup.DELETE("/:id", bookController.DeleteBook)
+		booksGroup.POST("/borrow/:id", bookController.BorrowBook)
+		booksGroup.POST("/return/:id", bookController.ReturnBook)
+		booksGroup.GET("/search", bookController.SearchBooks)
+		booksGroup.GET("/category", bookController.CategoryBooks)
+		booksGroup.GET("/available", bookController.AvailableBooks)
 	}
 }

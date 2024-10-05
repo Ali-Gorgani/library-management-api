@@ -3,9 +3,11 @@ package usecase
 import (
 	"context"
 	"errors"
+	"library-management-api/auth-service/pkg/token"
 	"library-management-api/books-service/adapter/repository"
 	"library-management-api/books-service/core/domain"
 	"library-management-api/books-service/core/ports"
+	"library-management-api/util/errorhandler"
 )
 
 type BookUsecase struct {
@@ -18,79 +20,156 @@ func NewBookUseCase() *BookUsecase {
 	}
 }
 
-func (b *BookUsecase) AddBook(ctx context.Context, book *domain.Book) (*domain.Book, error) {
+func (b *BookUsecase) AddBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+	contextToken := ctx.Value("token").(string)
+	// TODO: secret key must comes from env
+	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
+
+	_, err := token.VerifyToken(contextToken, secretKey)
+	if err != nil {
+		return domain.Book{}, errorhandler.ErrForbidden
+	}
+
 	addedBook, err := b.bookRepository.AddBook(ctx, book)
 	if err != nil {
-		return &domain.Book{}, err
+		return domain.Book{}, err
 	}
 	return addedBook, nil
 }
 
-func (b *BookUsecase) GetBooks(ctx context.Context) ([]*domain.Book, error) {
+func (b *BookUsecase) GetBooks(ctx context.Context) ([]domain.Book, error) {
+	contextToken := ctx.Value("token").(string)
+	// TODO: secret key must comes from env
+	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
+
+	_, err := token.VerifyToken(contextToken, secretKey)
+	if err != nil {
+		return []domain.Book{}, errorhandler.ErrForbidden
+	}
+
 	books, err := b.bookRepository.GetBooks(ctx)
 	if err != nil {
-		return []*domain.Book{}, err
+		return []domain.Book{}, err
 	}
 	return books, nil
 }
 
-func (b *BookUsecase) GetBook(ctx context.Context, book *domain.Book) (*domain.Book, error) {
+func (b *BookUsecase) GetBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+	contextToken := ctx.Value("token").(string)
+	// TODO: secret key must comes from env
+	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
+
+	_, err := token.VerifyToken(contextToken, secretKey)
+	if err != nil {
+		return domain.Book{}, errorhandler.ErrForbidden
+	}
+
 	foundBook, err := b.bookRepository.GetBook(ctx, book)
 	if err != nil {
-		return &domain.Book{}, err
+		return domain.Book{}, err
 	}
 	return foundBook, nil
 }
 
-func (b *BookUsecase) UpdateBook(ctx context.Context, book *domain.Book) (*domain.Book, error) {
+func (b *BookUsecase) UpdateBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+	contextToken := ctx.Value("token").(string)
+	// TODO: secret key must comes from env
+	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
+
+	claims, err := token.VerifyToken(contextToken, secretKey)
+	if err != nil {
+		return domain.Book{}, errorhandler.ErrForbidden
+	}
+
+	if !claims.IsAdmin {
+		return domain.Book{}, errorhandler.ErrForbidden
+	}
+
 	updatedBook, err := b.bookRepository.UpdateBook(ctx, book)
 	if err != nil {
-		return &domain.Book{}, err
+		return domain.Book{}, err
 	}
 	return updatedBook, nil
 }
 
-func (b *BookUsecase) DeleteBook(ctx context.Context, book *domain.Book) error {
-	err := b.bookRepository.DeleteBook(ctx, book)
+func (b *BookUsecase) DeleteBook(ctx context.Context, book domain.Book) error {
+	contextToken := ctx.Value("token").(string)
+	// TODO: secret key must comes from env
+	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
+
+	claims, err := token.VerifyToken(contextToken, secretKey)
+	if err != nil {
+		return errorhandler.ErrForbidden
+	}
+
+	if !claims.IsAdmin {
+		return errorhandler.ErrForbidden
+	}
+
+	err = b.bookRepository.DeleteBook(ctx, book)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (b *BookUsecase) BorrowBook(ctx context.Context, book *domain.Book) (*domain.Book, error) {
+func (b *BookUsecase) BorrowBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+	contextToken := ctx.Value("token").(string)
+	// TODO: secret key must comes from env
+	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
+
+	_, err := token.VerifyToken(contextToken, secretKey)
+	if err != nil {
+		return domain.Book{}, errorhandler.ErrForbidden
+	}
+
 	foundBook, err := b.bookRepository.GetBook(ctx, book)
 	if err != nil {
-		return &domain.Book{}, err
+		return domain.Book{}, err
 	}
-	if foundBook.Available == false {
-		return &domain.Book{}, errors.New("book is already borrowed")
+
+	if !foundBook.Available {
+		return domain.Book{}, errors.New("book is not available")
 	}
+
 	foundBook.Available = false
 	foundBook.BorrowerID = book.BorrowerID
+
 	borrowedBook, err := b.bookRepository.UpdateBook(ctx, foundBook)
 	if err != nil {
-		return &domain.Book{}, err
+		return domain.Book{}, err
 	}
 	return borrowedBook, nil
 }
 
-func (b *BookUsecase) ReturnBook(ctx context.Context, book *domain.Book) (*domain.Book, error) {
+func (b *BookUsecase) ReturnBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+	contextToken := ctx.Value("token").(string)
+	// TODO: secret key must comes from env
+	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
+
+	_, err := token.VerifyToken(contextToken, secretKey)
+	if err != nil {
+		return domain.Book{}, errorhandler.ErrForbidden
+	}
+
 	foundBook, err := b.bookRepository.GetBook(ctx, book)
 	if err != nil {
-		return &domain.Book{}, err
+		return domain.Book{}, err
 	}
-	if foundBook.Available == true {
-		return &domain.Book{}, errors.New("book is already returned")
-	}
-	if *foundBook.BorrowerID != *book.BorrowerID {
-		return &domain.Book{}, errors.New("borrower ID does not match")
+
+	if foundBook.Available {
+		return domain.Book{}, errorhandler.ErrBookAlreadyAvailable
 	}
 	foundBook.Available = true
-	foundBook.BorrowerID = nil
+
+	if foundBook.BorrowerID != book.BorrowerID {
+		return domain.Book{}, errorhandler.ErrBorrowerIDMismatch
+	}
+	foundBook.BorrowerID = 0
+
 	returnedBook, err := b.bookRepository.UpdateBook(ctx, foundBook)
 	if err != nil {
-		return &domain.Book{}, err
+		return domain.Book{}, err
 	}
 	return returnedBook, nil
 }

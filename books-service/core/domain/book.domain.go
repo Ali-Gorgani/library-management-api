@@ -3,14 +3,14 @@ package domain
 import "time"
 
 type Book struct {
-	ID            int       `json:"id"`
-	Title         string    `json:"title"`
-	Author        string    `json:"author"`
-	Category      string    `json:"category"`
-	Subject       string    `json:"subject"`
-	Genre         string    `json:"genre"`
-	PublishedYear int       `json:"published_year"`
-	Available     bool      `json:"available"`
-	BorrowerID    *int      `json:"borrower_id"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID            uint
+	Title         string
+	Author        string
+	Category      string
+	Subject       string
+	Genre         string
+	PublishedYear uint
+	Available     bool
+	BorrowerID    uint
+	CreatedAt     time.Time
 }

@@ -75,6 +75,10 @@ message CategoryBooksReq {
 
 message AvailableBooksReq {}
 
+BooksResponse {
+  repeated BookRes books = 1;
+}
+
 service BookService {
     rpc AddBook(AddBookReq) returns (BookRes) {}
     rpc GetBooks(GetBooksReq) returns (stream BookRes) {}
