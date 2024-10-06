@@ -11,7 +11,7 @@ import (
 )
 
 type BookController struct {
-	bookUseCase *usecase.BookUsecase
+	bookUseCase *usecase.BookUseCase
 }
 
 func NewBookController() *BookController {
@@ -30,7 +30,9 @@ func (bc *BookController) AddBook(c *gin.Context) {
 
 	addedBook, err := bc.bookUseCase.AddBook(c.Request.Context(), MapDtoAddBookReqToDomainBook(book))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 		}
 		c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, err))
@@ -43,7 +45,9 @@ func (bc *BookController) AddBook(c *gin.Context) {
 func (bc *BookController) GetBooks(c *gin.Context) {
 	books, err := bc.bookUseCase.GetBooks(c.Request.Context())
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 		}
 		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
@@ -67,7 +71,9 @@ func (bc *BookController) GetBook(c *gin.Context) {
 
 	foundBook, err := bc.bookUseCase.GetBook(c.Request.Context(), MapDtoGetBookReqToDomainBook(getBookReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 			return
 		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
@@ -99,7 +105,9 @@ func (bc *BookController) UpdateBook(c *gin.Context) {
 
 	updatedBook, err := bc.bookUseCase.UpdateBook(c.Request.Context(), MapDtoUpdateBookReqToDomainBook(updateBookReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 			return
 		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
@@ -128,7 +136,9 @@ func (bc *BookController) DeleteBook(c *gin.Context) {
 
 	err = bc.bookUseCase.DeleteBook(c.Request.Context(), MapDtoDeleteBookReqToDomainBook(deleteBookReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 			return
 		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
@@ -157,7 +167,9 @@ func (bc *BookController) BorrowBook(c *gin.Context) {
 
 	borrowedBook, err := bc.bookUseCase.BorrowBook(c.Request.Context(), MapDtoBorrowBookReqToDomainBook(borrowBookReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 			return
 		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
@@ -189,7 +201,9 @@ func (bc *BookController) ReturnBook(c *gin.Context) {
 
 	returnedBook, err := bc.bookUseCase.ReturnBook(c.Request.Context(), MapDtoReturnBookReqToDomainBook(returnBookReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 			return
 		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
@@ -225,7 +239,9 @@ func (bc *BookController) SearchBooks(c *gin.Context) {
 	// Call the service layer with all non-empty query parameters
 	books, err := bc.bookUseCase.SearchBooks(c.Request.Context(), MapDtoSearchBooksReqToDomainBook(searchBooksReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 		} else if errors.Is(err, errorhandler.ErrInvalidSearchQuery) {
 			c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, errorhandler.ErrInvalidSearchQuery))
@@ -258,7 +274,9 @@ func (bc *BookController) CategoryBooks(c *gin.Context) {
 
 	books, err := bc.bookUseCase.CategoryBooks(c.Request.Context(), MapDtoCategoryBooksReqToDomainBook(categoryBooksReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 		}
 		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
@@ -271,7 +289,9 @@ func (bc *BookController) CategoryBooks(c *gin.Context) {
 func (bc *BookController) AvailableBooks(c *gin.Context) {
 	books, err := bc.bookUseCase.AvailableBooks(c.Request.Context())
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 		}
 		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))

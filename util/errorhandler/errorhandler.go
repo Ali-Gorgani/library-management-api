@@ -13,10 +13,9 @@ var (
 )
 
 var (
-	ErrSessionNotFound  = errors.New("session not found")
-	ErrSessionRevoked   = errors.New("session is revoked")
-	ErrInvalidSession   = errors.New("session is invalid")
-	ErrMissingSessionID = errors.New("missing Session ID")
+	ErrSessionNotFound = errors.New("session not found")
+	ErrSessionRevoked  = errors.New("session is revoked")
+	ErrInvalidSession  = errors.New("session is invalid")
 )
 
 var (

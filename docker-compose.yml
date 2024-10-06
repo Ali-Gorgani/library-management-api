@@ -31,6 +31,22 @@ services:
     ports:
       - "5431:5432"
 
+  # Database for Auth Service
+  auth-db:
+    image: postgres:alpine
+    container_name: auth-db
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: library_auth_db
+    # volumes:
+    #   - auth-db-data:/var/lib/postgresql/data
+    restart: on-failure
+    networks:
+      - library-network
+    ports:
+      - "5432:5432"
+
 networks:
   library-network:
     driver: bridge

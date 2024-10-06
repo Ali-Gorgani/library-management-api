@@ -2,32 +2,28 @@ package usecase
 
 import (
 	"context"
-	"errors"
-	"library-management-api/auth-service/pkg/token"
 	"library-management-api/books-service/adapter/repository"
 	"library-management-api/books-service/core/domain"
 	"library-management-api/books-service/core/ports"
 	"library-management-api/util/errorhandler"
 )
 
-type BookUsecase struct {
+type BookUseCase struct {
 	bookRepository ports.BookRepository
 }
 
-func NewBookUseCase() *BookUsecase {
-	return &BookUsecase{
+func NewBookUseCase() *BookUseCase {
+	return &BookUseCase{
 		bookRepository: repository.NewBookRepository(),
 	}
 }
 
-func (b *BookUsecase) AddBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+func (b *BookUseCase) AddBook(ctx context.Context, book domain.Book) (domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	_, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return domain.Book{}, errorhandler.ErrForbidden
+		return domain.Book{}, errorhandler.ErrInvalidSession
 	}
 
 	addedBook, err := b.bookRepository.AddBook(ctx, book)
@@ -37,14 +33,12 @@ func (b *BookUsecase) AddBook(ctx context.Context, book domain.Book) (domain.Boo
 	return addedBook, nil
 }
 
-func (b *BookUsecase) GetBooks(ctx context.Context) ([]domain.Book, error) {
+func (b *BookUseCase) GetBooks(ctx context.Context) ([]domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	_, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return []domain.Book{}, errorhandler.ErrForbidden
+		return []domain.Book{}, errorhandler.ErrInvalidSession
 	}
 
 	books, err := b.bookRepository.GetBooks(ctx)
@@ -54,14 +48,12 @@ func (b *BookUsecase) GetBooks(ctx context.Context) ([]domain.Book, error) {
 	return books, nil
 }
 
-func (b *BookUsecase) GetBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+func (b *BookUseCase) GetBook(ctx context.Context, book domain.Book) (domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	_, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return domain.Book{}, errorhandler.ErrForbidden
+		return domain.Book{}, errorhandler.ErrInvalidSession
 	}
 
 	foundBook, err := b.bookRepository.GetBook(ctx, book)
@@ -71,14 +63,12 @@ func (b *BookUsecase) GetBook(ctx context.Context, book domain.Book) (domain.Boo
 	return foundBook, nil
 }
 
-func (b *BookUsecase) UpdateBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+func (b *BookUseCase) UpdateBook(ctx context.Context, book domain.Book) (domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	claims, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return domain.Book{}, errorhandler.ErrForbidden
+		return domain.Book{}, errorhandler.ErrInvalidSession
 	}
 
 	if !claims.IsAdmin {
@@ -92,14 +82,12 @@ func (b *BookUsecase) UpdateBook(ctx context.Context, book domain.Book) (domain.
 	return updatedBook, nil
 }
 
-func (b *BookUsecase) DeleteBook(ctx context.Context, book domain.Book) error {
+func (b *BookUseCase) DeleteBook(ctx context.Context, book domain.Book) error {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	claims, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return errorhandler.ErrForbidden
+		return errorhandler.ErrInvalidSession
 	}
 
 	if !claims.IsAdmin {
@@ -113,14 +101,12 @@ func (b *BookUsecase) DeleteBook(ctx context.Context, book domain.Book) error {
 	return nil
 }
 
-func (b *BookUsecase) BorrowBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+func (b *BookUseCase) BorrowBook(ctx context.Context, book domain.Book) (domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	claims, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return domain.Book{}, errorhandler.ErrForbidden
+		return domain.Book{}, errorhandler.ErrInvalidSession
 	}
 	book.BorrowerID = claims.ID
 
@@ -130,7 +116,7 @@ func (b *BookUsecase) BorrowBook(ctx context.Context, book domain.Book) (domain.
 	}
 
 	if !foundBook.Available {
-		return domain.Book{}, errors.New("book is not available")
+		return domain.Book{}, errorhandler.ErrBookAlreadyBorrowed
 	}
 	foundBook.Available = false
 	foundBook.BorrowerID = book.BorrowerID
@@ -142,14 +128,12 @@ func (b *BookUsecase) BorrowBook(ctx context.Context, book domain.Book) (domain.
 	return borrowedBook, nil
 }
 
-func (b *BookUsecase) ReturnBook(ctx context.Context, book domain.Book) (domain.Book, error) {
+func (b *BookUseCase) ReturnBook(ctx context.Context, book domain.Book) (domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	claims, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return domain.Book{}, errorhandler.ErrForbidden
+		return domain.Book{}, errorhandler.ErrInvalidSession
 	}
 	book.BorrowerID = claims.ID
 
@@ -175,14 +159,12 @@ func (b *BookUsecase) ReturnBook(ctx context.Context, book domain.Book) (domain.
 	return returnedBook, nil
 }
 
-func (b *BookUsecase) SearchBooks(ctx context.Context, book domain.Book) ([]domain.Book, error) {
+func (b *BookUseCase) SearchBooks(ctx context.Context, book domain.Book) ([]domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	_, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return []domain.Book{}, errorhandler.ErrForbidden
+		return []domain.Book{}, errorhandler.ErrInvalidSession
 	}
 
 	// Check if at least one of the fields is provided
@@ -197,14 +179,12 @@ func (b *BookUsecase) SearchBooks(ctx context.Context, book domain.Book) ([]doma
 	return books, nil
 }
 
-func (b *BookUsecase) CategoryBooks(ctx context.Context, book domain.Book) ([]domain.Book, error) {
+func (b *BookUseCase) CategoryBooks(ctx context.Context, book domain.Book) ([]domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	_, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return []domain.Book{}, errorhandler.ErrForbidden
+		return []domain.Book{}, errorhandler.ErrInvalidSession
 	}
 
 	books, err := b.bookRepository.CategoryBooks(ctx, book)
@@ -214,14 +194,12 @@ func (b *BookUsecase) CategoryBooks(ctx context.Context, book domain.Book) ([]do
 	return books, nil
 }
 
-func (b *BookUsecase) AvailableBooks(ctx context.Context) ([]domain.Book, error) {
+func (b *BookUseCase) AvailableBooks(ctx context.Context) ([]domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	_, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return []domain.Book{}, errorhandler.ErrForbidden
+		return []domain.Book{}, errorhandler.ErrInvalidSession
 	}
 
 	books, err := b.bookRepository.AvailableBooks(ctx)

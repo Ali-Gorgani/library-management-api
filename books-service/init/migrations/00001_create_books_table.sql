@@ -10,7 +10,7 @@ CREATE TABLE books (
     published_year INT NOT NULL,
     available BOOLEAN DEFAULT TRUE,
     borrower_id INT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at timestamptz NOT NULL DEFAULT NOW()
 );
 -- +goose StatementEnd
 

@@ -11,7 +11,7 @@ import (
 )
 
 type UserController struct {
-	userUseCase *usecase.UserUsecase
+	userUseCase *usecase.UserUseCase
 }
 
 func NewUserController() *UserController {
@@ -40,7 +40,9 @@ func (uc *UserController) AddUser(c *gin.Context) {
 func (uc *UserController) GetUsers(c *gin.Context) {
 	users, err := uc.userUseCase.GetUsers(c.Request.Context())
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 		}
 		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
@@ -65,7 +67,9 @@ func (uc *UserController) GetUser(c *gin.Context) {
 
 	user, err := uc.userUseCase.GetUser(c.Request.Context(), MapDtoGetUserReqToDomainUser(getUserReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 		} else if errors.Is(err, errorhandler.ErrUserNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrUserNotFound))
@@ -97,7 +101,9 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 
 	updatedUser, err := uc.userUseCase.UpdateUser(c.Request.Context(), MapDtoUpdateUserReqToDomainUser(updateUserReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 		} else if errors.Is(err, errorhandler.ErrUserNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrUserNotFound))
@@ -125,7 +131,9 @@ func (uc *UserController) DeleteUser(c *gin.Context) {
 
 	err = uc.userUseCase.DeleteUser(c.Request.Context(), MapDtoDeleteUserReqToDomainUser(deleteUserReq))
 	if err != nil {
-		if errors.Is(err, errorhandler.ErrForbidden) {
+		if errors.Is(err, errorhandler.ErrInvalidSession) {
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
+		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
 		} else if errors.Is(err, errorhandler.ErrUserNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrUserNotFound))

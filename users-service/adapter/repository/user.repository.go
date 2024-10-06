@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"library-management-api/auth-service/pkg/util"
 	"library-management-api/users-service/core/domain"
 	"library-management-api/users-service/core/ports"
 	"library-management-api/users-service/init/database"
@@ -24,15 +23,7 @@ func NewUserRepository() ports.UserRepository {
 // AddUser implements ports.UserRepository.
 func (u *UserRepository) AddUser(ctx context.Context, user domain.User) (domain.User, error) {
 	var addedUser User
-	hashedPassword := util.HashedPassword(user.Password)
-	mappedUser := MapUserDomainToUserEntity(domain.User{
-		ID:        user.ID,
-		Username:  user.Username,
-		Password:  hashedPassword,
-		Email:     user.Email,
-		IsAdmin:   user.IsAdmin,
-		CreatedAt: user.CreatedAt,
-	})
+	mappedUser := MapUserDomainToUserEntity(user)
 
 	query := "INSERT INTO users (username, hashed_password, email, is_admin) VALUES ($1, $2, $3, $4) RETURNING *"
 	row := u.db.QueryRow(query, mappedUser.Username, mappedUser.HashedPassword, mappedUser.Email, mappedUser.IsAdmin)
@@ -90,15 +81,7 @@ func (u *UserRepository) GetUser(ctx context.Context, user domain.User) (domain.
 // UpdateUser implements ports.UserRepository.
 func (u *UserRepository) UpdateUser(ctx context.Context, user domain.User) (domain.User, error) {
 	var updatedUser User
-	hashedPassword := util.HashedPassword(user.Password)
-	mappedUser := MapUserDomainToUserEntity(domain.User{
-		ID:        user.ID,
-		Username:  user.Username,
-		Password:  hashedPassword,
-		Email:     user.Email,
-		IsAdmin:   user.IsAdmin,
-		CreatedAt: user.CreatedAt,
-	})
+	mappedUser := MapUserDomainToUserEntity(user)
 
 	query := "UPDATE users SET username=$1, hashed_password=$2, email=$3, is_admin=$4 WHERE id=$5 RETURNING *"
 	row := u.db.QueryRow(query, mappedUser.Username, mappedUser.HashedPassword, mappedUser.Email, mappedUser.IsAdmin, mappedUser.ID)

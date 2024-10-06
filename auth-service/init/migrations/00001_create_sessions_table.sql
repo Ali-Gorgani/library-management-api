@@ -1,13 +1,12 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE sessions (
-    id VARCHAR(255) PRIMARY KEY NOT NULL,
-    username VARCHAR(255) NOT NULL,
-    user_email VARCHAR(255) NOT NULL,
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
     refresh_token VARCHAR(512) NOT NULL,
     is_revoked BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    expires_at timestamptz NOT NULL
 );
 -- +goose StatementEnd
 

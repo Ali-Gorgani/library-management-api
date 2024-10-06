@@ -2,25 +2,25 @@ package usecase
 
 import (
 	"context"
-	"library-management-api/auth-service/pkg/token"
 	"library-management-api/users-service/adapter/repository"
 	"library-management-api/users-service/core/domain"
 	"library-management-api/users-service/core/ports"
 	"library-management-api/util/errorhandler"
 )
 
-type UserUsecase struct {
+type UserUseCase struct {
 	userRepository ports.UserRepository
 }
 
-func NewUserUseCase() *UserUsecase {
-	return &UserUsecase{
+func NewUserUseCase() *UserUseCase {
+	return &UserUseCase{
 		userRepository: repository.NewUserRepository(),
 	}
 }
 
 // AddUser handles logic for adding a new user
-func (u *UserUsecase) AddUser(ctx context.Context, user domain.User) (domain.User, error) {
+func (u *UserUseCase) AddUser(ctx context.Context, user domain.User) (domain.User, error) {
+	// TODO: hash password before adding user data to database with gRPC from auth-service
 	newUser, err := u.userRepository.AddUser(ctx, user)
 	if err != nil {
 		return domain.User{}, err
@@ -29,14 +29,12 @@ func (u *UserUsecase) AddUser(ctx context.Context, user domain.User) (domain.Use
 }
 
 // GetUsers handles logic for retrieving all users
-func (u *UserUsecase) GetUsers(ctx context.Context) ([]domain.User, error) {
+func (u *UserUseCase) GetUsers(ctx context.Context) ([]domain.User, error) {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	claims, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return []domain.User{}, errorhandler.ErrForbidden
+		return []domain.User{}, errorhandler.ErrInvalidSession
 	}
 
 	if !claims.IsAdmin {
@@ -51,14 +49,12 @@ func (u *UserUsecase) GetUsers(ctx context.Context) ([]domain.User, error) {
 }
 
 // GetUser handles logic for retrieving a single user
-func (u *UserUsecase) GetUser(ctx context.Context, user domain.User) (domain.User, error) {
+func (u *UserUseCase) GetUser(ctx context.Context, user domain.User) (domain.User, error) {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	claims, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return domain.User{}, errorhandler.ErrForbidden
+		return domain.User{}, errorhandler.ErrInvalidSession
 	}
 
 	if !claims.IsAdmin {
@@ -73,20 +69,19 @@ func (u *UserUsecase) GetUser(ctx context.Context, user domain.User) (domain.Use
 }
 
 // UpdateUser handles logic for updating a user
-func (u *UserUsecase) UpdateUser(ctx context.Context, user domain.User) (domain.User, error) {
+func (u *UserUseCase) UpdateUser(ctx context.Context, user domain.User) (domain.User, error) {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	claims, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return domain.User{}, errorhandler.ErrForbidden
+		return domain.User{}, errorhandler.ErrInvalidSession
 	}
 
 	if claims.ID != user.ID && !claims.IsAdmin {
 		return domain.User{}, errorhandler.ErrForbidden
 	}
 
+	// TODO: hash password before updating user data to database with gRPC from auth-service
 	updatedUser, err := u.userRepository.UpdateUser(ctx, user)
 	if err != nil {
 		return domain.User{}, err
@@ -95,14 +90,12 @@ func (u *UserUsecase) UpdateUser(ctx context.Context, user domain.User) (domain.
 }
 
 // DeleteUser handles logic for deleting a user
-func (u *UserUsecase) DeleteUser(ctx context.Context, user domain.User) error {
+func (u *UserUseCase) DeleteUser(ctx context.Context, user domain.User) error {
 	contextToken := ctx.Value("token").(string)
-	// TODO: secret key must comes from env
-	secretKey := "mrlIpbCvRvrNubGCvf2CPy3OMZCXwXDHRz4SyPfFVcU="
 
-	claims, err := token.VerifyToken(contextToken, secretKey)
+	// TODO: verify contextToken with gRPC from auth-service and get claims
 	if err != nil {
-		return errorhandler.ErrForbidden
+		return errorhandler.ErrInvalidSession
 	}
 
 	if claims.ID != user.ID && !claims.IsAdmin {

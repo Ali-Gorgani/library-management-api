@@ -2,8 +2,6 @@ package token
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -11,20 +9,20 @@ import (
 func CreateToken(secretKey string, claim UserClaims) (string, error) {
 	claims, err := NewUserClaims(claim)
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString([]byte(j.secretKey))
+	tokenStr, err := token.SignedString([]byte(secretKey))
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
-	return tokenStr, claims, nil
+	return tokenStr, nil
 }
 
 // VerifyToken verifies the JWT token.
-func VerifyToken(tokenStr, secretKey string) (*UserClaims, error) {
+func VerifyToken(tokenStr, secretKey string) (UserClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
@@ -33,12 +31,12 @@ func VerifyToken(tokenStr, secretKey string) (*UserClaims, error) {
 		return []byte(secretKey), nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error parsing token: %w", err)
+		return UserClaims{}, fmt.Errorf("error parsing token: %w", err)
 	}
 
-	claims, ok := token.Claims.(*UserClaims)
+	claims, ok := token.Claims.(UserClaims)
 	if !ok {
-		return nil, fmt.Errorf("invalid token claims")
+		return UserClaims{}, fmt.Errorf("invalid token claims")
 	}
 
 	return claims, nil
