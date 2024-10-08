@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/Ali-Gorgani/library-management-api/users-service/api/proto";
+
+import "google/protobuf/timestamp.proto";
+
+message UserRes {
+  int32 id = 1;
+  string username = 2;
+  string email = 3;
+  bool is_admin = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message GetUserReq {
+  string username = 1;
+}
+
+service UsersService {
+  rpc GetUserByUsername(GetUserReq) returns (UserRes) {}
+}

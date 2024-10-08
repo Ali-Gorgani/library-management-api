@@ -2,7 +2,10 @@ package usecase
 
 import (
 	"context"
+	"github.com/rs/zerolog/log"
 	"library-management-api/auth-service/adapter/repository"
+	userService "library-management-api/auth-service/adapter/service/user"
+	"library-management-api/auth-service/configs"
 	"library-management-api/auth-service/core/domain"
 	"library-management-api/auth-service/core/ports"
 	"library-management-api/auth-service/pkg/token"
@@ -12,71 +15,72 @@ import (
 )
 
 type AuthUseCase struct {
-	AuthRepository ports.AuthRepository
+	authRepository ports.AuthRepository
+	userService    *userService.UserService
+	config         configs.Config
 }
 
 func NewAuthUseCase() *AuthUseCase {
+	config, err := configs.LoadConfig(".")
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to load config")
+	}
 	return &AuthUseCase{
-		AuthRepository: repository.NewAuthRepository(),
+		authRepository: repository.NewAuthRepository(),
+		userService:    userService.NewUserService(),
+		config:         config,
 	}
 }
 
 // Login handles logic for user login
 func (a *AuthUseCase) Login(ctx context.Context, auth domain.Auth) (domain.Auth, error) {
-	// TODO: get user with auth.Username from users-service database with gRPC
+	user, err := a.userService.GetUserByUsername(ctx, auth)
 	if err != nil {
 		return domain.Auth{}, err
 	}
 
-	var user domain.User
-	ok := util.ComparePassword(user.Password, auth.Password)
+	ok, err := util.ComparePassword(user.Password, auth.Password)
+	if err != nil {
+		return domain.Auth{}, err
+	}
 	if !ok {
-		return domain.Auth{}, nil
+		return domain.Auth{}, errorhandler.ErrInvalidCredentials
 	}
 
-	// TODO: get secretKey from env
-	userClaims := token.UserClaims{
+	auth.Claims = domain.Claims{
 		ID:       user.ID,
 		Username: user.Username,
 		Email:    user.Email,
 		IsAdmin:  user.IsAdmin,
 		Duration: 15 * time.Minute,
 	}
-	accessTokenClaims, err := token.NewUserClaims(userClaims)
-	if err != nil {
-		return domain.Auth{}, err
-	}
-	accessToken, err := token.CreateToken(secretKey, accessTokenClaims)
+	accessToken, err := a.authRepository.CreateToken(ctx, auth)
 	if err != nil {
 		return domain.Auth{}, err
 	}
 
-	userClaims = token.UserClaims{
+	auth.Claims = domain.Claims{
 		ID:       user.ID,
 		Username: user.Username,
 		Email:    user.Email,
 		IsAdmin:  user.IsAdmin,
 		Duration: 24 * time.Hour,
 	}
-	refreshTokenClaims, err := token.NewUserClaims(userClaims)
-	if err != nil {
-		return domain.Auth{}, err
-	}
-	refreshToken, err := token.CreateToken(secretKey, refreshTokenClaims)
+	refreshToken, err := a.authRepository.CreateToken(ctx, auth)
 	if err != nil {
 		return domain.Auth{}, err
 	}
 
 	auth = domain.Auth{
 		RefreshTokenUserID:    user.ID,
-		RefreshToken:          refreshToken,
+		RefreshToken:          refreshToken.AccessToken,
 		RefreshTokenIsRevoked: false,
-		RefreshTokenCreatedAt: refreshTokenClaims.RegisteredClaims.IssuedAt.Time,
-		RefreshTokenExpiresAt: refreshTokenClaims.RegisteredClaims.ExpiresAt.Time,
-		AccessToken:           accessToken,
-		AccessTokenExpiresAt:  accessTokenClaims.RegisteredClaims.ExpiresAt.Time,
+		RefreshTokenCreatedAt: refreshToken.Claims.IssuedAt,
+		RefreshTokenExpiresAt: refreshToken.RefreshTokenExpiresAt,
+		AccessToken:           accessToken.AccessToken,
+		AccessTokenExpiresAt:  accessToken.AccessTokenExpiresAt,
 	}
-	auth, err = a.AuthRepository.CreateToken(ctx, auth)
+	auth, err = a.authRepository.CreateToken(ctx, auth)
 	if err != nil {
 		return domain.Auth{}, err
 	}
@@ -87,17 +91,15 @@ func (a *AuthUseCase) Login(ctx context.Context, auth domain.Auth) (domain.Auth,
 func (a *AuthUseCase) Logout(ctx context.Context) error {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: get secretKey from env
-	_, err := token.VerifyToken(secretKey, contextToken)
+	auth := domain.Auth{
+		RefreshToken: contextToken,
+	}
+	_, err := a.VerifyToken(ctx, auth)
 	if err != nil {
 		return err
 	}
 
-	auth := domain.Auth{
-		RefreshToken: contextToken,
-	}
-
-	err = a.AuthRepository.DeleteToken(ctx, auth)
+	err = a.authRepository.DeleteToken(ctx, auth)
 	if err != nil {
 		return err
 	}
@@ -108,13 +110,16 @@ func (a *AuthUseCase) Logout(ctx context.Context) error {
 func (a *AuthUseCase) RefreshToken(ctx context.Context, auth domain.Auth) (domain.Auth, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: get secretKey from env
-	claims, err := token.VerifyToken(secretKey, contextToken)
-	if err != nil {
-		return domain.Auth{}, errorhandler.ErrInvalidSession
+	verifyTokenReq := domain.Auth{
+		RefreshToken: contextToken,
 	}
+	verifyTokenRes, err := a.VerifyToken(ctx, verifyTokenReq)
+	if err != nil {
+		return domain.Auth{}, err
+	}
+	claims := verifyTokenRes.Claims
 
-	auth, err = a.AuthRepository.GetToken(ctx, auth)
+	auth, err = a.authRepository.GetToken(ctx, auth)
 	if err != nil {
 		return domain.Auth{}, err
 	}
@@ -127,38 +132,35 @@ func (a *AuthUseCase) RefreshToken(ctx context.Context, auth domain.Auth) (domai
 		return domain.Auth{}, errorhandler.ErrSessionRevoked
 	}
 
-	userClaims := token.UserClaims{
+	auth.Claims = domain.Claims{
 		ID:       claims.ID,
 		Username: claims.Username,
 		Email:    claims.Email,
 		IsAdmin:  claims.IsAdmin,
 		Duration: 15 * time.Minute,
 	}
-	newAccessTokenClaims, err := token.NewUserClaims(userClaims)
+	newAuth, err := a.authRepository.CreateToken(ctx, auth)
 	if err != nil {
 		return domain.Auth{}, err
 	}
-	newAccessToken, err := token.CreateToken(secretKey, newAccessTokenClaims)
-	if err != nil {
-		return domain.Auth{}, err
-	}
-	auth.AccessToken = newAccessToken
-	auth.AccessTokenExpiresAt = newAccessTokenClaims.RegisteredClaims.ExpiresAt.Time
 
-	return auth, nil
+	return newAuth, nil
 }
 
 // RevokeToken handles logic for revoking a token
 func (a *AuthUseCase) RevokeToken(ctx context.Context, auth domain.Auth) error {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: get secretKey from env
-	claims, err := token.VerifyToken(secretKey, contextToken)
-	if err != nil {
-		return errorhandler.ErrInvalidSession
+	verifyTokenReq := domain.Auth{
+		RefreshToken: contextToken,
 	}
+	verifyTokenRes, err := a.VerifyToken(ctx, verifyTokenReq)
+	if err != nil {
+		return err
+	}
+	claims := verifyTokenRes.Claims
 
-	auth, err = a.AuthRepository.GetToken(ctx, auth)
+	auth, err = a.authRepository.GetToken(ctx, auth)
 	if err != nil {
 		return err
 	}
@@ -171,9 +173,72 @@ func (a *AuthUseCase) RevokeToken(ctx context.Context, auth domain.Auth) error {
 		return errorhandler.ErrSessionRevoked
 	}
 
-	err = a.AuthRepository.RevokeToken(ctx, auth)
+	err = a.authRepository.RevokeToken(ctx, auth)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// HashPassword handles logic for hashing a password
+func (a *AuthUseCase) HashPassword(ctx context.Context, auth domain.Auth) (domain.Auth, error) {
+	hashedPassword, err := util.HashedPassword(auth.Password)
+	if err != nil {
+		return domain.Auth{}, err
+	}
+	auth.Password = hashedPassword
+	return auth, nil
+}
+
+// CreateToken handles logic for creating a token
+func (a *AuthUseCase) CreateToken(ctx context.Context, auth domain.Auth) (domain.Auth, error) {
+	secretKey := a.config.JWT.SecretKey
+	userClaims := token.UserClaims{
+		ID:       auth.Claims.ID,
+		Username: auth.Claims.Username,
+		Email:    auth.Claims.Email,
+		IsAdmin:  auth.Claims.IsAdmin,
+		Duration: auth.Claims.Duration,
+	}
+	claims, err := token.NewUserClaims(userClaims)
+	if err != nil {
+		return domain.Auth{}, errorhandler.ErrInvalidSession
+	}
+	accessToken, err := token.CreateToken(secretKey, claims)
+	if err != nil {
+		return domain.Auth{}, errorhandler.ErrInvalidSession
+	}
+	auth = domain.Auth{
+		AccessToken:          accessToken,
+		AccessTokenExpiresAt: claims.RegisteredClaims.ExpiresAt.Time,
+		Claims: domain.Claims{
+			ID:        claims.ID,
+			Username:  claims.Username,
+			Email:     claims.Email,
+			IsAdmin:   claims.IsAdmin,
+			Duration:  claims.Duration,
+			IssuedAt:  claims.RegisteredClaims.IssuedAt.Time,
+			ExpiresAt: claims.RegisteredClaims.ExpiresAt.Time,
+		},
+	}
+	return auth, nil
+}
+
+// VerifyToken handles logic for verifying a token
+func (a *AuthUseCase) VerifyToken(ctx context.Context, auth domain.Auth) (domain.Auth, error) {
+	secretKey := a.config.JWT.SecretKey
+	claims, err := token.VerifyToken(auth.AccessToken, secretKey)
+	if err != nil {
+		return domain.Auth{}, errorhandler.ErrInvalidSession
+	}
+	auth.Claims = domain.Claims{
+		ID:        claims.ID,
+		Username:  claims.Username,
+		Email:     claims.Email,
+		IsAdmin:   claims.IsAdmin,
+		Duration:  claims.Duration,
+		IssuedAt:  claims.RegisteredClaims.IssuedAt.Time,
+		ExpiresAt: claims.RegisteredClaims.ExpiresAt.Time,
+	}
+	return auth, nil
 }

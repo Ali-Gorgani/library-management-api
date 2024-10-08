@@ -3,8 +3,8 @@ package auth
 import (
 	"context"
 	"github.com/rs/zerolog/log"
-	"library-management-api/users-service/core/domain"
-	"library-management-api/users-service/third-party/auth"
+	"library-management-api/books-service/core/domain"
+	"library-management-api/books-service/third-party/auth"
 )
 
 type AuthService struct {

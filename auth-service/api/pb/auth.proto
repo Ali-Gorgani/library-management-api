@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/Ali-Gorgani/library-management-api/auth-service/api/proto";
+
+message HashedPasswordReq {
+  string password = 1;
+}
+
+message HashedPasswordRes {
+  string hashed_password = 1;
+}
+
+message VerifyTokenReq {
+  string token = 1;
+}
+
+message VerifyTokenRes {
+  int32 ID = 1;
+  string Username = 2;
+  string Email = 3;
+  bool IsAdmin = 4;
+  int64 Duration = 5;
+}
+
+service AuthService {
+  rpc HashedPassword(HashedPasswordReq) returns (HashedPasswordRes) {}
+  rpc VerifyToken(VerifyTokenReq) returns (VerifyTokenRes) {}
+}

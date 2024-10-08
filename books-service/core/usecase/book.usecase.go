@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"library-management-api/books-service/adapter/repository"
+	"library-management-api/books-service/adapter/service/auth"
 	"library-management-api/books-service/core/domain"
 	"library-management-api/books-service/core/ports"
 	"library-management-api/util/errorhandler"
@@ -10,18 +11,23 @@ import (
 
 type BookUseCase struct {
 	bookRepository ports.BookRepository
+	authService    *auth.AuthService
 }
 
 func NewBookUseCase() *BookUseCase {
 	return &BookUseCase{
 		bookRepository: repository.NewBookRepository(),
+		authService:    auth.NewAuthService(),
 	}
 }
 
 func (b *BookUseCase) AddBook(ctx context.Context, book domain.Book) (domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	_, err := b.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return domain.Book{}, errorhandler.ErrInvalidSession
 	}
@@ -36,7 +42,10 @@ func (b *BookUseCase) AddBook(ctx context.Context, book domain.Book) (domain.Boo
 func (b *BookUseCase) GetBooks(ctx context.Context) ([]domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	_, err := b.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return []domain.Book{}, errorhandler.ErrInvalidSession
 	}
@@ -51,7 +60,10 @@ func (b *BookUseCase) GetBooks(ctx context.Context) ([]domain.Book, error) {
 func (b *BookUseCase) GetBook(ctx context.Context, book domain.Book) (domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	_, err := b.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return domain.Book{}, errorhandler.ErrInvalidSession
 	}
@@ -66,10 +78,14 @@ func (b *BookUseCase) GetBook(ctx context.Context, book domain.Book) (domain.Boo
 func (b *BookUseCase) UpdateBook(ctx context.Context, book domain.Book) (domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	verifyTokenRes, err := b.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return domain.Book{}, errorhandler.ErrInvalidSession
 	}
+	claims := verifyTokenRes.Claims
 
 	if !claims.IsAdmin {
 		return domain.Book{}, errorhandler.ErrForbidden
@@ -85,10 +101,14 @@ func (b *BookUseCase) UpdateBook(ctx context.Context, book domain.Book) (domain.
 func (b *BookUseCase) DeleteBook(ctx context.Context, book domain.Book) error {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	verifyTokenRes, err := b.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return errorhandler.ErrInvalidSession
 	}
+	claims := verifyTokenRes.Claims
 
 	if !claims.IsAdmin {
 		return errorhandler.ErrForbidden
@@ -104,12 +124,16 @@ func (b *BookUseCase) DeleteBook(ctx context.Context, book domain.Book) error {
 func (b *BookUseCase) BorrowBook(ctx context.Context, book domain.Book) (domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	verifyTokenRes, err := b.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return domain.Book{}, errorhandler.ErrInvalidSession
 	}
-	book.BorrowerID = claims.ID
+	claims := verifyTokenRes.Claims
 
+	book.BorrowerID = claims.ID
 	foundBook, err := b.bookRepository.GetBook(ctx, book)
 	if err != nil {
 		return domain.Book{}, err
@@ -131,12 +155,16 @@ func (b *BookUseCase) BorrowBook(ctx context.Context, book domain.Book) (domain.
 func (b *BookUseCase) ReturnBook(ctx context.Context, book domain.Book) (domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	verifyTokenRes, err := b.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return domain.Book{}, errorhandler.ErrInvalidSession
 	}
-	book.BorrowerID = claims.ID
+	claims := verifyTokenRes.Claims
 
+	book.BorrowerID = claims.ID
 	foundBook, err := b.bookRepository.GetBook(ctx, book)
 	if err != nil {
 		return domain.Book{}, err
@@ -162,7 +190,10 @@ func (b *BookUseCase) ReturnBook(ctx context.Context, book domain.Book) (domain.
 func (b *BookUseCase) SearchBooks(ctx context.Context, book domain.Book) ([]domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	_, err := b.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return []domain.Book{}, errorhandler.ErrInvalidSession
 	}
@@ -182,7 +213,10 @@ func (b *BookUseCase) SearchBooks(ctx context.Context, book domain.Book) ([]doma
 func (b *BookUseCase) CategoryBooks(ctx context.Context, book domain.Book) ([]domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	_, err := b.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return []domain.Book{}, errorhandler.ErrInvalidSession
 	}
@@ -197,7 +231,10 @@ func (b *BookUseCase) CategoryBooks(ctx context.Context, book domain.Book) ([]do
 func (b *BookUseCase) AvailableBooks(ctx context.Context) ([]domain.Book, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	_, err := b.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return []domain.Book{}, errorhandler.ErrInvalidSession
 	}

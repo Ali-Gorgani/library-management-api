@@ -62,11 +62,11 @@ func (u *UserRepository) GetUsers(ctx context.Context) ([]domain.User, error) {
 	return res, nil
 }
 
-// GetUser implements ports.UserRepository.
-func (u *UserRepository) GetUser(ctx context.Context, user domain.User) (domain.User, error) {
+// GetUserByUsername implements ports.UserRepository.
+func (u *UserRepository) GetUserByUsername(ctx context.Context, user domain.User) (domain.User, error) {
 	var foundUser User
-	query := "SELECT * FROM users WHERE id=$1"
-	row := u.db.QueryRow(query, user.ID)
+	query := "SELECT * FROM users WHERE username=$1"
+	row := u.db.QueryRow(query, user.Username)
 	err := row.Scan(&foundUser.ID, &foundUser.Username, &foundUser.HashedPassword, &foundUser.Email, &foundUser.IsAdmin, &foundUser.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"library-management-api/users-service/adapter/repository"
+	"library-management-api/users-service/adapter/service/auth"
 	"library-management-api/users-service/core/domain"
 	"library-management-api/users-service/core/ports"
 	"library-management-api/util/errorhandler"
@@ -10,17 +11,27 @@ import (
 
 type UserUseCase struct {
 	userRepository ports.UserRepository
+	authService    *auth.AuthService
 }
 
 func NewUserUseCase() *UserUseCase {
 	return &UserUseCase{
 		userRepository: repository.NewUserRepository(),
+		authService:    auth.NewAuthService(),
 	}
 }
 
 // AddUser handles logic for adding a new user
 func (u *UserUseCase) AddUser(ctx context.Context, user domain.User) (domain.User, error) {
-	// TODO: hash password before adding user data to database with gRPC from auth-service
+	hashedPasswordReq := domain.Auth{
+		Password: user.Password,
+	}
+	hashedPasswordRes, err := u.authService.HashedPassword(ctx, hashedPasswordReq)
+	hashedPassword, err := u.authService.HashedPassword(ctx, hashedPasswordRes)
+	if err != nil {
+		return domain.User{}, err
+	}
+	user.Password = hashedPassword.Password
 	newUser, err := u.userRepository.AddUser(ctx, user)
 	if err != nil {
 		return domain.User{}, err
@@ -32,10 +43,14 @@ func (u *UserUseCase) AddUser(ctx context.Context, user domain.User) (domain.Use
 func (u *UserUseCase) GetUsers(ctx context.Context) ([]domain.User, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	verifyTokenRes, err := u.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return []domain.User{}, errorhandler.ErrInvalidSession
 	}
+	claims := verifyTokenRes.Claims
 
 	if !claims.IsAdmin {
 		return []domain.User{}, errorhandler.ErrForbidden
@@ -48,40 +63,55 @@ func (u *UserUseCase) GetUsers(ctx context.Context) ([]domain.User, error) {
 	return users, nil
 }
 
-// GetUser handles logic for retrieving a single user
-func (u *UserUseCase) GetUser(ctx context.Context, user domain.User) (domain.User, error) {
+// GetUserByUsername handles logic for retrieving a single user
+func (u *UserUseCase) GetUserByUsername(ctx context.Context, user domain.User) (domain.User, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	verifyTokenRes, err := u.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return domain.User{}, errorhandler.ErrInvalidSession
 	}
+	claims := verifyTokenRes.Claims
 
 	if !claims.IsAdmin {
 		return domain.User{}, errorhandler.ErrForbidden
 	}
 
-	getUser, err := u.userRepository.GetUser(ctx, user)
+	foundUser, err := u.userRepository.GetUserByUsername(ctx, user)
 	if err != nil {
 		return domain.User{}, err
 	}
-	return getUser, nil
+	return foundUser, nil
 }
 
 // UpdateUser handles logic for updating a user
 func (u *UserUseCase) UpdateUser(ctx context.Context, user domain.User) (domain.User, error) {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	verifyTokenRes, err := u.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return domain.User{}, errorhandler.ErrInvalidSession
 	}
+	claims := verifyTokenRes.Claims
 
 	if claims.ID != user.ID && !claims.IsAdmin {
 		return domain.User{}, errorhandler.ErrForbidden
 	}
 
-	// TODO: hash password before updating user data to database with gRPC from auth-service
+	hashedPasswordReq := domain.Auth{
+		Password: user.Password,
+	}
+	hashedPasswordRes, err := u.authService.HashedPassword(ctx, hashedPasswordReq)
+	if err != nil {
+		return domain.User{}, err
+	}
+	user.Password = hashedPasswordRes.Password
 	updatedUser, err := u.userRepository.UpdateUser(ctx, user)
 	if err != nil {
 		return domain.User{}, err
@@ -93,10 +123,14 @@ func (u *UserUseCase) UpdateUser(ctx context.Context, user domain.User) (domain.
 func (u *UserUseCase) DeleteUser(ctx context.Context, user domain.User) error {
 	contextToken := ctx.Value("token").(string)
 
-	// TODO: verify contextToken with gRPC from auth-service and get claims
+	verifyTokenReq := domain.Auth{
+		AccessToken: contextToken,
+	}
+	verifyTokenRes, err := u.authService.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
 		return errorhandler.ErrInvalidSession
 	}
+	claims := verifyTokenRes.Claims
 
 	if claims.ID != user.ID && !claims.IsAdmin {
 		return errorhandler.ErrForbidden

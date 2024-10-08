@@ -7,8 +7,6 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -30,17 +28,6 @@ func run() error {
 		log.Error().Err(err).Msg("migration failed")
 		return err
 	}
-
-	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	}
-
-	conn, err := grpc.NewClient("localhost:8081", opts...)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to connect to users-service")
-		return err
-	}
-	defer conn.Close()
 
 	return nil
 }

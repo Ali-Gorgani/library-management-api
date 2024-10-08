@@ -19,11 +19,9 @@ type Auth struct {
 }
 
 type Claims struct {
-	ID        uint
-	Username  string
-	Email     string
-	IsAdmin   bool
-	Duration  time.Duration
-	IssuedAt  time.Time
-	ExpiresAt time.Time
+	ID       uint
+	Username string
+	Email    string
+	IsAdmin  bool
+	Duration time.Duration
 }

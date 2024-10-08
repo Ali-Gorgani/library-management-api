@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"library-management-api/users-service/core/domain"
-	"library-management-api/users-service/third-party/auth"
+	"library-management-api/books-service/core/domain"
+	"library-management-api/books-service/third-party/auth"
 )
 
 func MapDomainHashedPasswordReqToDtoHashedPasswordReq(domain domain.Auth) auth.HashedPasswordReq {
