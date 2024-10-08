@@ -2,29 +2,29 @@ package grpc
 
 import (
 	"library-management-api/auth-service/core/domain"
-	"library-management-api/auth-service/pkg/proto"
+	"library-management-api/pkg/proto/auth"
 )
 
-func MapProtoHashedPasswordReqToDomainAuth(in *proto.HashedPasswordReq) domain.Auth {
+func MapProtoHashedPasswordReqToDomainAuth(in *auth.HashedPasswordReq) domain.Auth {
 	return domain.Auth{
 		Password: in.Password,
 	}
 }
 
-func MapDomainAuthToProtoHashedPasswordRes(res domain.Auth) *proto.HashedPasswordRes {
-	return &proto.HashedPasswordRes{
+func MapDomainAuthToProtoHashedPasswordRes(res domain.Auth) *auth.HashedPasswordRes {
+	return &auth.HashedPasswordRes{
 		HashedPassword: res.Password,
 	}
 }
 
-func MapProtoVerifyTokenReqToDomainAuth(in *proto.VerifyTokenReq) domain.Auth {
+func MapProtoVerifyTokenReqToDomainAuth(in *auth.VerifyTokenReq) domain.Auth {
 	return domain.Auth{
 		AccessToken: in.Token,
 	}
 }
 
-func MapDomainAuthToProtoVerifyTokenRes(res domain.Auth) *proto.VerifyTokenRes {
-	return &proto.VerifyTokenRes{
+func MapDomainAuthToProtoVerifyTokenRes(res domain.Auth) *auth.VerifyTokenRes {
+	return &auth.VerifyTokenRes{
 		ID:       int32(res.Claims.ID),
 		Username: res.Claims.Username,
 		Email:    res.Claims.Email,

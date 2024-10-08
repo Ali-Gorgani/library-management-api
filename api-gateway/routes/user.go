@@ -16,7 +16,7 @@ func UserRoutes(r *gin.Engine) {
 		usersGroup.POST("/", userController.AddUser)
 		usersGroup.Use(middleware.AuthMiddleware())
 		usersGroup.GET("/", userController.GetUsers)
-		usersGroup.GET("/:id", userController.GetUser)
+		usersGroup.GET("/:id", userController.GetUserByUsername)
 		usersGroup.PUT("/:id", userController.UpdateUser)
 		usersGroup.DELETE("/:id", userController.DeleteUser)
 	}

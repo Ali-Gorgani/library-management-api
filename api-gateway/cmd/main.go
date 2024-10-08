@@ -25,8 +25,8 @@ func main() {
 		c.String(http.StatusNotFound, "404 page not found")
 	})
 
-	log.Info().Msg("Starting Users Service on :8081")
-	err := http.ListenAndServe(":8081", r)
+	log.Info().Msg("Starting Users Service on :8080")
+	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to start api gateway service")
 	}

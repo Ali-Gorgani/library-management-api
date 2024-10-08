@@ -52,8 +52,8 @@ func (uc *UserController) GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// GetUser handles GET requests for retrieving a single user by ID
-func (uc *UserController) GetUser(c *gin.Context) {
+// GetUserByUsername handles GET requests for retrieving a single user by ID
+func (uc *UserController) GetUserByUsername(c *gin.Context) {
 	userIDStr := c.Param("id")
 	userID, err := strconv.Atoi(userIDStr)
 	if err != nil {
@@ -65,7 +65,7 @@ func (uc *UserController) GetUser(c *gin.Context) {
 		ID: uint(userID),
 	}
 
-	user, err := uc.userUseCase.GetUser(c.Request.Context(), MapDtoGetUserReqToDomainUser(getUserReq))
+	user, err := uc.userUseCase.GetUserByUsername(c.Request.Context(), MapDtoGetUserReqToDomainUser(getUserReq))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))

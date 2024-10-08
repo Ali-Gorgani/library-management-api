@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package proto;
+package auth;
 
-option go_package = "github.com/Ali-Gorgani/library-management-api/auth-service/api/proto";
+option go_package = "github.com/Ali-Gorgani/library-management-api/pkg/proto/auth";
 
 message HashedPasswordReq {
   string password = 1;

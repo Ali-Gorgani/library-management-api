@@ -21,7 +21,7 @@ type AuthUseCase struct {
 }
 
 func NewAuthUseCase() *AuthUseCase {
-	config, err := configs.LoadConfig(".")
+	config, err := configs.LoadConfig("auth-service")
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to load config")
 	}

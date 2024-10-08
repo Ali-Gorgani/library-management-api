@@ -22,7 +22,7 @@ type jwt struct {
 func LoadConfig(path string) (config Config, err error) {
 	viper.AutomaticEnv()
 	viper.AddConfigPath(path)
-	viper.SetConfigName("configs")
+	viper.SetConfigName("config")
 	viper.SetConfigType("json")
 
 	err = viper.ReadInConfig()
@@ -34,6 +34,6 @@ func LoadConfig(path string) (config Config, err error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("could not unmarshal config: %w", err)
 	}
-	
+
 	return config, nil
 }

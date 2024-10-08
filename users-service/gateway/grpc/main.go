@@ -1,17 +1,24 @@
 package main
 
 import (
+	"github.com/rs/zerolog"
+	"library-management-api/pkg/proto/user"
 	"library-management-api/users-service/adapter/repository"
 	grpcController "library-management-api/users-service/api/grpc"
 	"library-management-api/users-service/core/ports"
 	"library-management-api/users-service/init/database"
 	"library-management-api/users-service/init/migrations"
-	"library-management-api/users-service/pkg/proto"
 	"net"
+	"os"
 
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 )
+
+func init() {
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	database.Open(database.DefaultPostgresConfig())
+}
 
 func main() {
 	db := database.P().DB
@@ -24,20 +31,19 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to listen")
 	}
-	userController := grpcController.NewUserController()
 
 	srv := grpc.NewServer()
+	userController := grpcController.NewUserController()
+	user.RegisterUsersServiceServer(srv, userController)
 
-	proto.RegisterUsersServiceServer(srv, userController)
-
+	log.Info().Msgf("server started at %s", lis.Addr().String())
 	if err = srv.Serve(lis); err != nil {
 		log.Fatal().Err(err).Msg("failed to serve")
 	}
-
 }
 
 type Server struct {
-	proto.UnimplementedAuthServiceServer
+	user.UnimplementedUsersServiceServer
 	userRepository ports.UserRepository
 }
 

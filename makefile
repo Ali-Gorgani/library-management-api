@@ -15,22 +15,16 @@ TYPE := sql
 %:
 	@true
 
-proto-users:
+proto-user:
 	@protoc \
 		--proto_path=users-service/api/pb "users-service/api/pb/user.proto" \
-		--go_out=auth-service/pkg/proto --go_opt=paths=source_relative \
-		--go_out=users-service/pkg/proto --go_opt=paths=source_relative \
-		--go-grpc_out=auth-service/pkg/proto --go-grpc_opt=paths=source_relative \
-		--go-grpc_out=users-service/pkg/proto --go-grpc_opt=paths=source_relative
+		--go_out=pkg/proto/user --go_opt=paths=source_relative \
+		--go-grpc_out=pkg/proto/user --go-grpc_opt=paths=source_relative
 
 proto-auth:
 	@protoc \
 		--proto_path=auth-service/api/pb "auth-service/api/pb/auth.proto" \
-		--go_out=auth-service/pkg/proto --go_opt=paths=source_relative \
-		--go_out=users-service/pkg/proto --go_opt=paths=source_relative \
-		--go_out=books-service/pkg/proto --go_opt=paths=source_relative \
-		--go-grpc_out=auth-service/pkg/proto --go-grpc_opt=paths=source_relative \
-		--go-grpc_out=users-service/pkg/proto --go-grpc_opt=paths=source_relative \
-		--go-grpc_out=books-service/pkg/proto --go-grpc_opt=paths=source_relative
+		--go_out=pkg/proto/auth --go_opt=paths=source_relative \
+		--go-grpc_out=pkg/proto/auth --go-grpc_opt=paths=source_relative
 
 .PHONY: docker-compose-db goose goose-create proto-books proto-users proto-auth
