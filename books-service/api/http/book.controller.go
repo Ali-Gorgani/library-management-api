@@ -34,8 +34,9 @@ func (bc *BookController) AddBook(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
 		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		} else {
+			c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, err))
 		}
-		c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, err))
 		return
 	}
 	res := MapDomainBookToDtoBookRes(addedBook)
@@ -49,8 +50,9 @@ func (bc *BookController) GetBooks(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
 		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		} else {
+			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		}
-		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		return
 	}
 	res := MapDomainBooksToDtoBooksRes(books)
@@ -75,14 +77,12 @@ func (bc *BookController) GetBook(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
 		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
-			return
 		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrBookNotFound))
-			return
 		} else {
 			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
-			return
 		}
+		return
 	}
 	res := MapDomainBookToDtoBookRes(foundBook)
 	c.JSON(http.StatusOK, res)
@@ -109,14 +109,12 @@ func (bc *BookController) UpdateBook(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
 		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
-			return
 		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrBookNotFound))
-			return
 		} else {
 			c.JSON(http.StatusBadRequest, errorhandler.ErrorResponse(http.StatusBadRequest, err))
-			return
 		}
+		return
 	}
 	res := MapDomainBookToDtoBookRes(updatedBook)
 	c.JSON(http.StatusOK, res)
@@ -140,14 +138,12 @@ func (bc *BookController) DeleteBook(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
 		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
-			return
 		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrBookNotFound))
-			return
 		} else {
 			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
-			return
 		}
+		return
 	}
 
 	c.JSON(http.StatusOK, nil)
@@ -171,17 +167,14 @@ func (bc *BookController) BorrowBook(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
 		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
-			return
 		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
 			c.JSON(http.StatusConflict, errorhandler.ErrorResponse(http.StatusConflict, errorhandler.ErrBookNotFound))
-			return
 		} else if errors.Is(err, errorhandler.ErrBookAlreadyBorrowed) {
 			c.JSON(http.StatusConflict, errorhandler.ErrorResponse(http.StatusConflict, errorhandler.ErrBookAlreadyBorrowed))
-			return
 		} else {
 			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
-			return
 		}
+		return
 	}
 	res := MapDomainBookToDtoBookRes(borrowedBook)
 	c.JSON(http.StatusOK, res)
@@ -205,20 +198,16 @@ func (bc *BookController) ReturnBook(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
 		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
-			return
 		} else if errors.Is(err, errorhandler.ErrBookNotFound) {
 			c.JSON(http.StatusConflict, errorhandler.ErrorResponse(http.StatusConflict, errorhandler.ErrBookNotFound))
-			return
 		} else if errors.Is(err, errorhandler.ErrBookAlreadyAvailable) {
 			c.JSON(http.StatusConflict, errorhandler.ErrorResponse(http.StatusConflict, errorhandler.ErrBookAlreadyAvailable))
-			return
 		} else if errors.Is(err, errorhandler.ErrBorrowerIDMismatch) {
 			c.JSON(http.StatusConflict, errorhandler.ErrorResponse(http.StatusConflict, errorhandler.ErrBorrowerIDMismatch))
-			return
 		} else {
 			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
-			return
 		}
+		return
 	}
 	res := MapDomainBookToDtoBookRes(returnedBook)
 	c.JSON(http.StatusOK, res)
@@ -248,6 +237,7 @@ func (bc *BookController) SearchBooks(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		}
+		return
 	}
 	res := MapDomainBooksToDtoBooksRes(books)
 	c.JSON(http.StatusOK, res)
@@ -278,8 +268,9 @@ func (bc *BookController) CategoryBooks(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
 		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		} else {
+			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		}
-		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		return
 	}
 	res := MapDomainBooksToDtoBooksRes(books)
@@ -293,8 +284,9 @@ func (bc *BookController) AvailableBooks(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
 		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		} else {
+			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		}
-		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		return
 	}
 	res := MapDomainBooksToDtoBooksRes(books)

@@ -26,8 +26,7 @@ func (u *UserUseCase) AddUser(ctx context.Context, user domain.User) (domain.Use
 	hashedPasswordReq := domain.Auth{
 		Password: user.Password,
 	}
-	hashedPasswordRes, err := u.authService.HashedPassword(ctx, hashedPasswordReq)
-	hashedPassword, err := u.authService.HashedPassword(ctx, hashedPasswordRes)
+	hashedPassword, err := u.authService.HashedPassword(ctx, hashedPasswordReq)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -41,7 +40,10 @@ func (u *UserUseCase) AddUser(ctx context.Context, user domain.User) (domain.Use
 
 // GetUsers handles logic for retrieving all users
 func (u *UserUseCase) GetUsers(ctx context.Context) ([]domain.User, error) {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return []domain.User{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,
@@ -63,9 +65,12 @@ func (u *UserUseCase) GetUsers(ctx context.Context) ([]domain.User, error) {
 	return users, nil
 }
 
-// GetUserByUsername handles logic for retrieving a single user
-func (u *UserUseCase) GetUserByUsername(ctx context.Context, user domain.User) (domain.User, error) {
-	contextToken := ctx.Value("token").(string)
+// GetUserByID handles logic for retrieving a single user
+func (u *UserUseCase) GetUserByID(ctx context.Context, user domain.User) (domain.User, error) {
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return domain.User{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,
@@ -80,6 +85,15 @@ func (u *UserUseCase) GetUserByUsername(ctx context.Context, user domain.User) (
 		return domain.User{}, errorhandler.ErrForbidden
 	}
 
+	foundUser, err := u.userRepository.GetUserByID(ctx, user)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return foundUser, nil
+}
+
+// GetUserByUsername handles logic for retrieving a single user
+func (u *UserUseCase) GetUserByUsername(ctx context.Context, user domain.User) (domain.User, error) {
 	foundUser, err := u.userRepository.GetUserByUsername(ctx, user)
 	if err != nil {
 		return domain.User{}, err
@@ -89,7 +103,10 @@ func (u *UserUseCase) GetUserByUsername(ctx context.Context, user domain.User) (
 
 // UpdateUser handles logic for updating a user
 func (u *UserUseCase) UpdateUser(ctx context.Context, user domain.User) (domain.User, error) {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return domain.User{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,
@@ -121,7 +138,10 @@ func (u *UserUseCase) UpdateUser(ctx context.Context, user domain.User) (domain.
 
 // DeleteUser handles logic for deleting a user
 func (u *UserUseCase) DeleteUser(ctx context.Context, user domain.User) error {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,

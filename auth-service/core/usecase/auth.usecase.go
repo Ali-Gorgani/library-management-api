@@ -16,7 +16,7 @@ import (
 
 type AuthUseCase struct {
 	authRepository ports.AuthRepository
-	userService    *userService.UserService
+	userService    *userService.UsersService
 	config         configs.Config
 }
 
@@ -54,7 +54,7 @@ func (a *AuthUseCase) Login(ctx context.Context, auth domain.Auth) (domain.Auth,
 		IsAdmin:  user.IsAdmin,
 		Duration: 15 * time.Minute,
 	}
-	accessToken, err := a.authRepository.CreateToken(ctx, auth)
+	accessToken, err := a.CreateToken(ctx, auth)
 	if err != nil {
 		return domain.Auth{}, err
 	}
@@ -66,7 +66,7 @@ func (a *AuthUseCase) Login(ctx context.Context, auth domain.Auth) (domain.Auth,
 		IsAdmin:  user.IsAdmin,
 		Duration: 24 * time.Hour,
 	}
-	refreshToken, err := a.authRepository.CreateToken(ctx, auth)
+	refreshToken, err := a.CreateToken(ctx, auth)
 	if err != nil {
 		return domain.Auth{}, err
 	}
@@ -76,7 +76,7 @@ func (a *AuthUseCase) Login(ctx context.Context, auth domain.Auth) (domain.Auth,
 		RefreshToken:          refreshToken.AccessToken,
 		RefreshTokenIsRevoked: false,
 		RefreshTokenCreatedAt: refreshToken.Claims.IssuedAt,
-		RefreshTokenExpiresAt: refreshToken.RefreshTokenExpiresAt,
+		RefreshTokenExpiresAt: refreshToken.AccessTokenExpiresAt,
 		AccessToken:           accessToken.AccessToken,
 		AccessTokenExpiresAt:  accessToken.AccessTokenExpiresAt,
 	}
@@ -89,16 +89,22 @@ func (a *AuthUseCase) Login(ctx context.Context, auth domain.Auth) (domain.Auth,
 
 // Logout handles logic for user logout
 func (a *AuthUseCase) Logout(ctx context.Context) error {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return errorhandler.ErrInvalidSession
+	}
 
 	auth := domain.Auth{
-		RefreshToken: contextToken,
+		AccessToken: contextToken,
 	}
-	_, err := a.VerifyToken(ctx, auth)
+	claims, err := a.VerifyToken(ctx, auth)
 	if err != nil {
 		return err
 	}
 
+	auth = domain.Auth{
+		RefreshTokenUserID: claims.Claims.ID,
+	}
 	err = a.authRepository.DeleteToken(ctx, auth)
 	if err != nil {
 		return err
@@ -108,10 +114,13 @@ func (a *AuthUseCase) Logout(ctx context.Context) error {
 
 // RefreshToken handles logic for refreshing a token
 func (a *AuthUseCase) RefreshToken(ctx context.Context, auth domain.Auth) (domain.Auth, error) {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return domain.Auth{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
-		RefreshToken: contextToken,
+		AccessToken: contextToken,
 	}
 	verifyTokenRes, err := a.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {
@@ -139,7 +148,7 @@ func (a *AuthUseCase) RefreshToken(ctx context.Context, auth domain.Auth) (domai
 		IsAdmin:  claims.IsAdmin,
 		Duration: 15 * time.Minute,
 	}
-	newAuth, err := a.authRepository.CreateToken(ctx, auth)
+	newAuth, err := a.CreateToken(ctx, auth)
 	if err != nil {
 		return domain.Auth{}, err
 	}
@@ -149,10 +158,13 @@ func (a *AuthUseCase) RefreshToken(ctx context.Context, auth domain.Auth) (domai
 
 // RevokeToken handles logic for revoking a token
 func (a *AuthUseCase) RevokeToken(ctx context.Context, auth domain.Auth) error {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
-		RefreshToken: contextToken,
+		AccessToken: contextToken,
 	}
 	verifyTokenRes, err := a.VerifyToken(ctx, verifyTokenReq)
 	if err != nil {

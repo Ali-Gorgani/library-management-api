@@ -25,7 +25,7 @@ func MapProtoVerifyTokenReqToDomainAuth(in *auth.VerifyTokenReq) domain.Auth {
 
 func MapDomainAuthToProtoVerifyTokenRes(res domain.Auth) *auth.VerifyTokenRes {
 	return &auth.VerifyTokenRes{
-		ID:       int32(res.Claims.ID),
+		Id:       int32(res.Claims.ID),
 		Username: res.Claims.Username,
 		Email:    res.Claims.Email,
 		IsAdmin:  res.Claims.IsAdmin,

@@ -17,7 +17,7 @@ func NewUserController() *UserController {
 	}
 }
 
-func (c *UserController) GetUser(ctx context.Context, req *user.GetUserReq) (*user.UserRes, error) {
+func (c *UserController) GetUserByUsername(ctx context.Context, req *user.GetUserReq) (*user.UserRes, error) {
 	res, err := c.userUseCase.GetUserByUsername(ctx, MapProtoGetUserReqToDomainAuth(req))
 	if err != nil {
 		return nil, err

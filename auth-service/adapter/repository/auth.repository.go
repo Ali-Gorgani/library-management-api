@@ -39,7 +39,7 @@ func (a *AuthRepository) CreateToken(ctx context.Context, auth domain.Auth) (dom
 func (a *AuthRepository) GetToken(ctx context.Context, auth domain.Auth) (domain.Auth, error) {
 	mappedAuth := MapAuthDomainToAuthEntity(auth)
 	query := "SELECT id, user_id, refresh_token, is_revoked, created_at, expires_at FROM sessions WHERE refresh_token = $1"
-	row := a.db.QueryRow(query, mappedAuth.RefreshToken)
+	row := a.db.QueryRow(query, mappedAuth.RefreshToken.String)
 	err := row.Scan(&mappedAuth.ID, &mappedAuth.UserID, &mappedAuth.RefreshToken, &mappedAuth.IsRevoked, &mappedAuth.CreatedAt, &mappedAuth.ExpiresAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -55,7 +55,7 @@ func (a *AuthRepository) GetToken(ctx context.Context, auth domain.Auth) (domain
 func (a *AuthRepository) RevokeToken(ctx context.Context, auth domain.Auth) error {
 	mappedAuth := MapAuthDomainToAuthEntity(auth)
 	query := "UPDATE sessions SET is_revoked = $1 WHERE refresh_token = $2"
-	_, err := a.db.Exec(query, true, mappedAuth.RefreshToken)
+	_, err := a.db.Exec(query, true, mappedAuth.RefreshToken.String)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return errorhandler.ErrSessionNotFound
@@ -68,8 +68,8 @@ func (a *AuthRepository) RevokeToken(ctx context.Context, auth domain.Auth) erro
 // DeleteToken implements ports.AuthRepository.
 func (a *AuthRepository) DeleteToken(ctx context.Context, auth domain.Auth) error {
 	mappedAuth := MapAuthDomainToAuthEntity(auth)
-	query := "DELETE FROM sessions WHERE refresh_token = $1"
-	_, err := a.db.Exec(query, mappedAuth.RefreshToken)
+	query := "DELETE FROM sessions WHERE user_id = $1"
+	_, err := a.db.Exec(query, mappedAuth.UserID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return errorhandler.ErrSessionNotFound

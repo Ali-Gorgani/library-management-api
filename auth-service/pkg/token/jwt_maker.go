@@ -34,10 +34,10 @@ func VerifyToken(tokenStr, secretKey string) (UserClaims, error) {
 		return UserClaims{}, fmt.Errorf("error parsing token: %w", err)
 	}
 
-	claims, ok := token.Claims.(UserClaims)
+	claims, ok := token.Claims.(*UserClaims)
 	if !ok {
 		return UserClaims{}, fmt.Errorf("invalid token claims")
 	}
 
-	return claims, nil
+	return *claims, nil
 }

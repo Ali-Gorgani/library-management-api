@@ -27,9 +27,13 @@ func (uc *UserController) AddUser(c *gin.Context) {
 		return
 	}
 
-	addedUser, err := uc.userUseCase.AddUser(c.Request.Context(), MapDtoAddUserReqToDomainUser(user))
+	addedUser, err := uc.userUseCase.AddUser(c, MapDtoAddUserReqToDomainUser(user))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
+		if errors.Is(err, errorhandler.ErrDuplicateUsername) {
+			c.JSON(http.StatusConflict, errorhandler.ErrorResponse(http.StatusConflict, errorhandler.ErrDuplicateUsername))
+		} else {
+			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
+		}
 		return
 	}
 	res := MapDomainUserToDtoUserRes(addedUser)
@@ -38,22 +42,23 @@ func (uc *UserController) AddUser(c *gin.Context) {
 
 // GetUsers handles GET requests for retrieving all users
 func (uc *UserController) GetUsers(c *gin.Context) {
-	users, err := uc.userUseCase.GetUsers(c.Request.Context())
+	users, err := uc.userUseCase.GetUsers(c)
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
 		} else if errors.Is(err, errorhandler.ErrForbidden) {
 			c.JSON(http.StatusForbidden, errorhandler.ErrorResponse(http.StatusForbidden, errorhandler.ErrForbidden))
+		} else {
+			c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		}
-		c.JSON(http.StatusInternalServerError, errorhandler.ErrorResponse(http.StatusInternalServerError, err))
 		return
 	}
 	res := MapDomainUsersToDtoUsersRes(users)
 	c.JSON(http.StatusOK, res)
 }
 
-// GetUserByUsername handles GET requests for retrieving a single user by ID
-func (uc *UserController) GetUserByUsername(c *gin.Context) {
+// GetUserByID handles GET requests for retrieving a single user by ID
+func (uc *UserController) GetUserByID(c *gin.Context) {
 	userIDStr := c.Param("id")
 	userID, err := strconv.Atoi(userIDStr)
 	if err != nil {
@@ -65,7 +70,7 @@ func (uc *UserController) GetUserByUsername(c *gin.Context) {
 		ID: uint(userID),
 	}
 
-	user, err := uc.userUseCase.GetUserByUsername(c.Request.Context(), MapDtoGetUserReqToDomainUser(getUserReq))
+	user, err := uc.userUseCase.GetUserByID(c, MapDtoGetUserReqToDomainUser(getUserReq))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
@@ -79,7 +84,6 @@ func (uc *UserController) GetUserByUsername(c *gin.Context) {
 		return
 	}
 	res := MapDomainUserToDtoUserRes(user)
-
 	c.JSON(http.StatusOK, res)
 }
 
@@ -99,7 +103,7 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 	}
 	updateUserReq.ID = uint(userID)
 
-	updatedUser, err := uc.userUseCase.UpdateUser(c.Request.Context(), MapDtoUpdateUserReqToDomainUser(updateUserReq))
+	updatedUser, err := uc.userUseCase.UpdateUser(c, MapDtoUpdateUserReqToDomainUser(updateUserReq))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
@@ -129,7 +133,7 @@ func (uc *UserController) DeleteUser(c *gin.Context) {
 		ID: uint(userID),
 	}
 
-	err = uc.userUseCase.DeleteUser(c.Request.Context(), MapDtoDeleteUserReqToDomainUser(deleteUserReq))
+	err = uc.userUseCase.DeleteUser(c, MapDtoDeleteUserReqToDomainUser(deleteUserReq))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))

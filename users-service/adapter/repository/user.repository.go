@@ -29,6 +29,9 @@ func (u *UserRepository) AddUser(ctx context.Context, user domain.User) (domain.
 	row := u.db.QueryRow(query, mappedUser.Username, mappedUser.HashedPassword, mappedUser.Email, mappedUser.IsAdmin)
 	err := row.Scan(&addedUser.ID, &addedUser.Username, &addedUser.HashedPassword, &addedUser.Email, &addedUser.IsAdmin, &addedUser.CreatedAt)
 	if err != nil {
+		if err.Error() == "ERROR: duplicate key value violates unique constraint \"users_username_key\" (SQLSTATE 23505)" {
+			return domain.User{}, errorhandler.ErrDuplicateUsername
+		}
 		return domain.User{}, err
 	}
 	res := MapUserEntityToUserDomain(addedUser)
@@ -62,11 +65,31 @@ func (u *UserRepository) GetUsers(ctx context.Context) ([]domain.User, error) {
 	return res, nil
 }
 
+// GetUserByID implements ports.UserRepository.
+func (u *UserRepository) GetUserByID(ctx context.Context, user domain.User) (domain.User, error) {
+	var foundUser User
+	mappedUser := MapUserDomainToUserEntity(user)
+
+	query := "SELECT * FROM users WHERE id=$1"
+	row := u.db.QueryRow(query, mappedUser.ID)
+	err := row.Scan(&foundUser.ID, &foundUser.Username, &foundUser.HashedPassword, &foundUser.Email, &foundUser.IsAdmin, &foundUser.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.User{}, errorhandler.ErrUserNotFound
+		}
+		return domain.User{}, err
+	}
+	res := MapUserEntityToUserDomain(foundUser)
+	return res, nil
+}
+
 // GetUserByUsername implements ports.UserRepository.
 func (u *UserRepository) GetUserByUsername(ctx context.Context, user domain.User) (domain.User, error) {
 	var foundUser User
+	mappedUser := MapUserDomainToUserEntity(user)
+
 	query := "SELECT * FROM users WHERE username=$1"
-	row := u.db.QueryRow(query, user.Username)
+	row := u.db.QueryRow(query, mappedUser.Username)
 	err := row.Scan(&foundUser.ID, &foundUser.Username, &foundUser.HashedPassword, &foundUser.Email, &foundUser.IsAdmin, &foundUser.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -98,8 +121,9 @@ func (u *UserRepository) UpdateUser(ctx context.Context, user domain.User) (doma
 
 // DeleteUser implements ports.UserRepository.
 func (u *UserRepository) DeleteUser(ctx context.Context, user domain.User) error {
+	mappedUser := MapUserDomainToUserEntity(user)
 	query := "DELETE FROM users WHERE id=$1"
-	_, err := u.db.Exec(query, user.ID)
+	_, err := u.db.Exec(query, mappedUser.ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return errorhandler.ErrUserNotFound

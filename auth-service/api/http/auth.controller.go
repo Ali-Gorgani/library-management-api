@@ -27,7 +27,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	auth, err := ac.authUseCase.Login(c.Request.Context(), MapDtoAuthLoginReqToDomainAuth(req))
+	auth, err := ac.authUseCase.Login(c, MapDtoAuthLoginReqToDomainAuth(req))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrUserNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrUserNotFound))
@@ -44,7 +44,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 
 // Logout handles DELETE requests for Auth logout
 func (ac *AuthController) Logout(c *gin.Context) {
-	err := ac.authUseCase.Logout(c.Request.Context())
+	err := ac.authUseCase.Logout(c)
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrSessionNotFound) {
 			c.JSON(http.StatusNotFound, errorhandler.ErrorResponse(http.StatusNotFound, errorhandler.ErrSessionNotFound))
@@ -64,7 +64,7 @@ func (ac *AuthController) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	auth, err := ac.authUseCase.RefreshToken(c.Request.Context(), MapDtoAuthRefreshTokenReqToDomainAuth(req))
+	auth, err := ac.authUseCase.RefreshToken(c, MapDtoAuthRefreshTokenReqToDomainAuth(req))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
@@ -91,7 +91,7 @@ func (ac *AuthController) RevokeToken(c *gin.Context) {
 		return
 	}
 
-	err := ac.authUseCase.RevokeToken(c.Request.Context(), MapDtoAuthRevokeTokenReqToDomainAuth(req))
+	err := ac.authUseCase.RevokeToken(c, MapDtoAuthRevokeTokenReqToDomainAuth(req))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))

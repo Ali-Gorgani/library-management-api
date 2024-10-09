@@ -25,7 +25,7 @@ func MapDtoVerifyTokenReqToPbVerifyTokenReq(dto VerifyTokenReq) *auth.VerifyToke
 
 func MapPbVerifyTokenResToDtoVerifyTokenRes(pb *auth.VerifyTokenRes) VerifyTokenRes {
 	return VerifyTokenRes{
-		ID:       uint(pb.ID),
+		ID:       uint(pb.Id),
 		Username: pb.Username,
 		Email:    pb.Email,
 		IsAdmin:  pb.IsAdmin,

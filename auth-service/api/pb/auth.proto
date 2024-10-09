@@ -17,11 +17,11 @@ message VerifyTokenReq {
 }
 
 message VerifyTokenRes {
-  int32 ID = 1;
-  string Username = 2;
-  string Email = 3;
-  bool IsAdmin = 4;
-  int64 Duration = 5;
+  int32 id = 1;
+  string username = 2;
+  string email = 3;
+  bool is_admin = 4;
+  int64 duration = 5;
 }
 
 service AuthService {

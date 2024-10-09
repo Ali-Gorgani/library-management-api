@@ -9,9 +9,10 @@ import "google/protobuf/timestamp.proto";
 message UserRes {
   int32 id = 1;
   string username = 2;
-  string email = 3;
-  bool is_admin = 4;
-  google.protobuf.Timestamp created_at = 5;
+  string password = 3;
+  string email = 4;
+  bool is_admin = 5;
+  google.protobuf.Timestamp created_at = 6;
 }
 
 message GetUserReq {

@@ -10,6 +10,7 @@ var (
 	ErrUserNotFound       = errors.New("user not found")
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrForbidden          = errors.New("you are not allowed to access this resource")
+	ErrDuplicateUsername  = errors.New("username already exists")
 )
 
 var (

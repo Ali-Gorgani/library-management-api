@@ -7,6 +7,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang/protobuf v1.5.4
 	github.com/jackc/pgx/v4 v4.18.3
+	github.com/lib/pq v1.10.2
 	github.com/pressly/goose/v3 v3.22.1
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/viper v1.19.0

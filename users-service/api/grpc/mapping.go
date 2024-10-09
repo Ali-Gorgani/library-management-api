@@ -16,6 +16,7 @@ func MapDomainAuthToProtoUserRes(res domain.User) *user.UserRes {
 	return &user.UserRes{
 		Id:        int32(res.ID),
 		Username:  res.Username,
+		Password:  res.Password,
 		Email:     res.Email,
 		IsAdmin:   res.IsAdmin,
 		CreatedAt: timestamppb.New(res.CreatedAt),

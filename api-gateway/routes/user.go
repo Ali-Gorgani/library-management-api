@@ -14,10 +14,10 @@ func UserRoutes(r *gin.Engine) {
 	usersGroup := r.Group("/users")
 	{
 		usersGroup.POST("/", userController.AddUser)
-		usersGroup.Use(middleware.AuthMiddleware())
-		usersGroup.GET("/", userController.GetUsers)
-		usersGroup.GET("/:id", userController.GetUserByUsername)
-		usersGroup.PUT("/:id", userController.UpdateUser)
-		usersGroup.DELETE("/:id", userController.DeleteUser)
+		usersGroupWithMW := usersGroup.Use(middleware.AuthMiddleware())
+		usersGroupWithMW.GET("/", userController.GetUsers)
+		usersGroupWithMW.GET("/:id", userController.GetUserByID)
+		usersGroupWithMW.PUT("/:id", userController.UpdateUser)
+		usersGroupWithMW.DELETE("/:id", userController.DeleteUser)
 	}
 }

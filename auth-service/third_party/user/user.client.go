@@ -21,7 +21,7 @@ type Client struct {
 // NewClient creates a new gRPC client for AuthService
 func NewClient() (IClient, error) {
 	// Establish gRPC connection with the server
-	conn, err := grpc.NewClient("localhost:8081", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("localhost:8082", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create grpc client")
 		return nil, err
@@ -36,7 +36,7 @@ func NewClient() (IClient, error) {
 func (c *Client) GetUserByUsername(ctx context.Context, req GetUserReq) (UserRes, error) {
 	res, err := c.c.GetUserByUsername(ctx, MapDtoGetUserReqToPbGetUserReq(req))
 	if err != nil {
-		log.Error().Err(err).Msg("failed to call GetUser")
+		log.Error().Err(err).Msg("failed to call GetUserByUsername")
 		return UserRes{}, err
 	}
 	return MapPbGetUserResToDtoGetUserRes(res), nil

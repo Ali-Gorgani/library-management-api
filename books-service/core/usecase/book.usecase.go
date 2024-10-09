@@ -22,7 +22,10 @@ func NewBookUseCase() *BookUseCase {
 }
 
 func (b *BookUseCase) AddBook(ctx context.Context, book domain.Book) (domain.Book, error) {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return domain.Book{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,
@@ -40,7 +43,10 @@ func (b *BookUseCase) AddBook(ctx context.Context, book domain.Book) (domain.Boo
 }
 
 func (b *BookUseCase) GetBooks(ctx context.Context) ([]domain.Book, error) {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return []domain.Book{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,
@@ -58,7 +64,10 @@ func (b *BookUseCase) GetBooks(ctx context.Context) ([]domain.Book, error) {
 }
 
 func (b *BookUseCase) GetBook(ctx context.Context, book domain.Book) (domain.Book, error) {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return domain.Book{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,
@@ -76,7 +85,10 @@ func (b *BookUseCase) GetBook(ctx context.Context, book domain.Book) (domain.Boo
 }
 
 func (b *BookUseCase) UpdateBook(ctx context.Context, book domain.Book) (domain.Book, error) {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return domain.Book{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,
@@ -99,7 +111,10 @@ func (b *BookUseCase) UpdateBook(ctx context.Context, book domain.Book) (domain.
 }
 
 func (b *BookUseCase) DeleteBook(ctx context.Context, book domain.Book) error {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,
@@ -122,7 +137,10 @@ func (b *BookUseCase) DeleteBook(ctx context.Context, book domain.Book) error {
 }
 
 func (b *BookUseCase) BorrowBook(ctx context.Context, book domain.Book) (domain.Book, error) {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return domain.Book{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,
@@ -153,7 +171,10 @@ func (b *BookUseCase) BorrowBook(ctx context.Context, book domain.Book) (domain.
 }
 
 func (b *BookUseCase) ReturnBook(ctx context.Context, book domain.Book) (domain.Book, error) {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return domain.Book{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,
@@ -188,7 +209,10 @@ func (b *BookUseCase) ReturnBook(ctx context.Context, book domain.Book) (domain.
 }
 
 func (b *BookUseCase) SearchBooks(ctx context.Context, book domain.Book) ([]domain.Book, error) {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return []domain.Book{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,
@@ -211,7 +235,10 @@ func (b *BookUseCase) SearchBooks(ctx context.Context, book domain.Book) ([]doma
 }
 
 func (b *BookUseCase) CategoryBooks(ctx context.Context, book domain.Book) ([]domain.Book, error) {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return []domain.Book{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,
@@ -229,7 +256,10 @@ func (b *BookUseCase) CategoryBooks(ctx context.Context, book domain.Book) ([]do
 }
 
 func (b *BookUseCase) AvailableBooks(ctx context.Context) ([]domain.Book, error) {
-	contextToken := ctx.Value("token").(string)
+	contextToken, ok := ctx.Value("token").(string)
+	if !ok {
+		return []domain.Book{}, errorhandler.ErrInvalidSession
+	}
 
 	verifyTokenReq := domain.Auth{
 		AccessToken: contextToken,

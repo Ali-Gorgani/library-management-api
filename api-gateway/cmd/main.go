@@ -2,6 +2,9 @@ package main
 
 import (
 	"library-management-api/api-gateway/routes"
+	authDB "library-management-api/auth-service/init/database"
+	bookDB "library-management-api/books-service/init/database"
+	userDB "library-management-api/users-service/init/database"
 	"net/http"
 	"os"
 
@@ -12,6 +15,9 @@ import (
 
 func init() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	authDB.Open(authDB.DefaultPostgresConfig())
+	userDB.Open(userDB.DefaultPostgresConfig())
+	bookDB.Open(bookDB.DefaultPostgresConfig())
 }
 
 func main() {
@@ -25,7 +31,7 @@ func main() {
 		c.String(http.StatusNotFound, "404 page not found")
 	})
 
-	log.Info().Msg("Starting Users Service on :8080")
+	log.Info().Msg("Starting api-gateway on :8080")
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to start api gateway service")
