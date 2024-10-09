@@ -1,0 +1,636 @@
+openapi: 3.0.0
+info:
+  title: Library Management API
+  description: API documentation for the Library Management System
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local server
+
+paths:
+  /login:
+    post:
+      summary: User login
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginReq'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoginRes'
+        '401':
+          description: Unauthorized
+
+  /logout:
+    post:
+      summary: User logout
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Successful logout
+        '401':
+          description: Unauthorized
+
+  /tokens/refresh-token:
+    post:
+      summary: Refresh access token
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRefreshTokenReq'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthRefreshTokenRes'
+        '401':
+          description: Unauthorized
+
+  /tokens/revoke-token:
+    post:
+      summary: Revoke refresh token
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRevokeTokenReq'
+      responses:
+        '204':
+          description: Token revoked
+        '401':
+          description: Unauthorized
+
+  /users:
+    post:
+      summary: Add a new user
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddUserReq'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRes'
+        '400':
+          description: Bad request
+
+    get:
+      summary: Get all users
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserRes'
+        '401':
+          description: Unauthorized
+
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRes'
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+    put:
+      summary: Update user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserReq'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRes'
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+    delete:
+      summary: Delete user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: User deleted
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+  /books:
+    post:
+      summary: Add a new book
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddBookReq'
+      responses:
+        '201':
+          description: Book created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookRes'
+        '400':
+          description: Bad request
+
+    get:
+      summary: Get all books
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookRes'
+        '401':
+          description: Unauthorized
+
+  /books/{id}:
+    get:
+      summary: Get book by ID
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookRes'
+        '404':
+          description: Book not found
+        '401':
+          description: Unauthorized
+
+    put:
+      summary: Update book
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBookReq'
+      responses:
+        '200':
+          description: Book updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookRes'
+        '404':
+          description: Book not found
+        '401':
+          description: Unauthorized
+
+    delete:
+      summary: Delete book
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Book deleted
+        '404':
+          description: Book not found
+        '401':
+          description: Unauthorized
+
+  /books/borrow/{id}:
+    post:
+      summary: Borrow a book
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book borrowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookRes'
+        '404':
+          description: Book not found
+        '401':
+          description: Unauthorized
+
+  /books/return/{id}:
+    post:
+      summary: Return a book
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookRes'
+        '404':
+          description: Book not found
+        '401':
+          description: Unauthorized
+
+  /books/search:
+    get:
+      summary: Search books
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: author
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookRes'
+        '401':
+          description: Unauthorized
+
+  /books/category:
+    get:
+      summary: Get books by category
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: categoryType
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: categoryValue
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookRes'
+        '401':
+          description: Unauthorized
+
+  /books/available:
+    get:
+      summary: Get available books
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of available books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookRes'
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthLoginReq:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    AuthLoginRes:
+      type: object
+      properties:
+        id:
+          type: integer
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        access_token_expires_at:
+          type: string
+          format: date-time
+        refresh_token_expires_at:
+          type: string
+          format: date-time
+        user_id:
+          type: integer
+
+    AuthRefreshTokenReq:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required:
+        - refresh_token
+
+    AuthRefreshTokenRes:
+      type: object
+      properties:
+        access_token:
+          type: string
+        access_token_expires_at:
+          type: string
+          format: date-time
+
+    AuthRevokeTokenReq:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required:
+        - refresh_token
+
+    AddUserReq:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+        is_admin:
+          type: boolean
+      required:
+        - username
+        - password
+        - email
+
+    UserRes:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        is_admin:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    UpdateUserReq:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+        is_admin:
+          type: boolean
+      required:
+        - id
+        - username
+        - password
+        - email
+
+    AddBookReq:
+      type: object
+      properties:
+        title:
+          type: string
+        author:
+          type: string
+        category:
+          type: string
+        subject:
+          type: string
+        genre:
+          type: string
+        published_year:
+          type: integer
+      required:
+        - title
+        - author
+        - category
+        - subject
+        - genre
+        - published_year
+
+    BookRes:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        author:
+          type: string
+        category:
+          type: string
+        subject:
+          type: string
+        genre:
+          type: string
+        published_year:
+          type: integer
+        available:
+          type: boolean
+        borrower_id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    UpdateBookReq:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        author:
+          type: string
+        category:
+          type: string
+        subject:
+          type: string
+        genre:
+          type: string
+        published_year:
+          type: integer
+        available:
+          type: boolean
+        borrower_id:
+          type: integer
+      required:
+        - id
+        - title
+        - author
+        - category
+        - subject
+        - genre
+        - published_year

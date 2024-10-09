@@ -31,6 +31,8 @@ func main() {
 		c.String(http.StatusNotFound, "404 page not found")
 	})
 
+	r.Static("/swagger", "./util/swagger")
+
 	log.Info().Msg("Starting api-gateway on :8080")
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
