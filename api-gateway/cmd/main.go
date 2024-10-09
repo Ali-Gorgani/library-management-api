@@ -15,9 +15,9 @@ import (
 
 func init() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	authDB.Open(authDB.DefaultPostgresConfig())
-	userDB.Open(userDB.DefaultPostgresConfig())
-	bookDB.Open(bookDB.DefaultPostgresConfig())
+	authDB.RunDB()
+	userDB.RunDB()
+	bookDB.RunDB()
 }
 
 func main() {

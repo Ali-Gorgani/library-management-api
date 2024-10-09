@@ -28,7 +28,7 @@ func (bc *BookController) AddBook(c *gin.Context) {
 		return
 	}
 
-	addedBook, err := bc.bookUseCase.AddBook(c.Request.Context(), MapDtoAddBookReqToDomainBook(book))
+	addedBook, err := bc.bookUseCase.AddBook(c, MapDtoAddBookReqToDomainBook(book))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
@@ -44,7 +44,7 @@ func (bc *BookController) AddBook(c *gin.Context) {
 }
 
 func (bc *BookController) GetBooks(c *gin.Context) {
-	books, err := bc.bookUseCase.GetBooks(c.Request.Context())
+	books, err := bc.bookUseCase.GetBooks(c)
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
@@ -71,7 +71,7 @@ func (bc *BookController) GetBook(c *gin.Context) {
 		ID: uint(bookID),
 	}
 
-	foundBook, err := bc.bookUseCase.GetBook(c.Request.Context(), MapDtoGetBookReqToDomainBook(getBookReq))
+	foundBook, err := bc.bookUseCase.GetBook(c, MapDtoGetBookReqToDomainBook(getBookReq))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
@@ -103,7 +103,7 @@ func (bc *BookController) UpdateBook(c *gin.Context) {
 	}
 	updateBookReq.ID = uint(bookID)
 
-	updatedBook, err := bc.bookUseCase.UpdateBook(c.Request.Context(), MapDtoUpdateBookReqToDomainBook(updateBookReq))
+	updatedBook, err := bc.bookUseCase.UpdateBook(c, MapDtoUpdateBookReqToDomainBook(updateBookReq))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
@@ -132,7 +132,7 @@ func (bc *BookController) DeleteBook(c *gin.Context) {
 		ID: uint(bookID),
 	}
 
-	err = bc.bookUseCase.DeleteBook(c.Request.Context(), MapDtoDeleteBookReqToDomainBook(deleteBookReq))
+	err = bc.bookUseCase.DeleteBook(c, MapDtoDeleteBookReqToDomainBook(deleteBookReq))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
@@ -161,7 +161,7 @@ func (bc *BookController) BorrowBook(c *gin.Context) {
 		ID: uint(bookID),
 	}
 
-	borrowedBook, err := bc.bookUseCase.BorrowBook(c.Request.Context(), MapDtoBorrowBookReqToDomainBook(borrowBookReq))
+	borrowedBook, err := bc.bookUseCase.BorrowBook(c, MapDtoBorrowBookReqToDomainBook(borrowBookReq))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
@@ -192,7 +192,7 @@ func (bc *BookController) ReturnBook(c *gin.Context) {
 		ID: uint(bookID),
 	}
 
-	returnedBook, err := bc.bookUseCase.ReturnBook(c.Request.Context(), MapDtoReturnBookReqToDomainBook(returnBookReq))
+	returnedBook, err := bc.bookUseCase.ReturnBook(c, MapDtoReturnBookReqToDomainBook(returnBookReq))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
@@ -226,7 +226,7 @@ func (bc *BookController) SearchBooks(c *gin.Context) {
 	}
 
 	// Call the service layer with all non-empty query parameters
-	books, err := bc.bookUseCase.SearchBooks(c.Request.Context(), MapDtoSearchBooksReqToDomainBook(searchBooksReq))
+	books, err := bc.bookUseCase.SearchBooks(c, MapDtoSearchBooksReqToDomainBook(searchBooksReq))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
@@ -262,7 +262,7 @@ func (bc *BookController) CategoryBooks(c *gin.Context) {
 		CategoryValue: categoryValue,
 	}
 
-	books, err := bc.bookUseCase.CategoryBooks(c.Request.Context(), MapDtoCategoryBooksReqToDomainBook(categoryBooksReq))
+	books, err := bc.bookUseCase.CategoryBooks(c, MapDtoCategoryBooksReqToDomainBook(categoryBooksReq))
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
@@ -278,7 +278,7 @@ func (bc *BookController) CategoryBooks(c *gin.Context) {
 }
 
 func (bc *BookController) AvailableBooks(c *gin.Context) {
-	books, err := bc.bookUseCase.AvailableBooks(c.Request.Context())
+	books, err := bc.bookUseCase.AvailableBooks(c)
 	if err != nil {
 		if errors.Is(err, errorhandler.ErrInvalidSession) {
 			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))

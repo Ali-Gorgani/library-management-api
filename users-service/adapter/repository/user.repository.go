@@ -46,12 +46,7 @@ func (u *UserRepository) GetUsers(ctx context.Context) ([]domain.User, error) {
 	if err != nil {
 		return []domain.User{}, err
 	}
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			return
-		}
-	}(rows)
+	defer rows.Close()
 
 	for rows.Next() {
 		var user User

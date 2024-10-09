@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/fs"
+	"library-management-api/users-service/init/migrations"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/pressly/goose/v3"
@@ -63,21 +64,19 @@ func Open(cfg PostgresConfig) {
 	log.Info().Msg("Database connected!")
 }
 
-func Migrate(db *sql.DB, dir string) error {
+func Migrate(db *sql.DB, dir string) {
 	err := goose.SetDialect("postgres")
 	if err != nil {
-		return fmt.Errorf("migrate: %w", err)
+		log.Fatal().Err(err).Msg("migrate: failed to set dialect")
 	}
 
 	err = goose.Up(db, dir)
 	if err != nil {
-		return fmt.Errorf("migrate: %w", err)
+		log.Fatal().Err(err).Msg("migrate: failed to migrate")
 	}
-
-	return nil
 }
 
-func MigrateFS(db *sql.DB, migrationsFS fs.FS, dir string) error {
+func MigrateFS(db *sql.DB, migrationsFS fs.FS, dir string) {
 	if dir == "" {
 		dir = "."
 	}
@@ -86,5 +85,11 @@ func MigrateFS(db *sql.DB, migrationsFS fs.FS, dir string) error {
 		goose.SetBaseFS(nil)
 	}()
 
-	return Migrate(db, dir)
+	Migrate(db, dir)
+}
+
+func RunDB() {
+	Open(DefaultPostgresConfig())
+	db := P().DB
+	MigrateFS(db, migrations.FS, ".")
 }

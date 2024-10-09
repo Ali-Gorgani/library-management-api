@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"library-management-api/util/errorhandler"
 	"net/http"
 	"strings"
 
@@ -13,7 +14,7 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := VerifyClaimsFromAuthHeader(c)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, err)
+			c.JSON(http.StatusUnauthorized, errorhandler.ErrorResponse(http.StatusUnauthorized, errorhandler.ErrInvalidSession))
 			c.Abort()
 		}
 

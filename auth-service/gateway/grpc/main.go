@@ -8,7 +8,6 @@ import (
 	grpcController "library-management-api/auth-service/api/grpc"
 	"library-management-api/auth-service/core/ports"
 	"library-management-api/auth-service/init/database"
-	"library-management-api/auth-service/init/migrations"
 	"library-management-api/pkg/proto/auth"
 	"net"
 	"os"
@@ -16,16 +15,10 @@ import (
 
 func init() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	database.Open(database.DefaultPostgresConfig())
+	database.RunDB()
 }
 
 func main() {
-	db := database.P().DB
-	err := database.MigrateFS(db, migrations.FS, ".")
-	if err != nil {
-		log.Fatal().Err(err).Msg("migration failed")
-	}
-
 	lis, err := net.Listen("tcp", ":8081")
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to listen")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"library-management-api/books-service/core/domain"
 	"library-management-api/books-service/core/ports"
 	"library-management-api/books-service/init/database"
@@ -44,12 +45,7 @@ func (b *BookRepository) GetBooks(ctx context.Context) ([]domain.Book, error) {
 	if err != nil {
 		return []domain.Book{}, err
 	}
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			return
-		}
-	}(rows)
+	defer rows.Close()
 
 	for rows.Next() {
 		var book Book
@@ -143,12 +139,7 @@ func (b *BookRepository) SearchBooks(ctx context.Context, book domain.Book) ([]d
 	if err != nil {
 		return []domain.Book{}, err
 	}
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			return
-		}
-	}(rows)
+	defer rows.Close()
 
 	// Iterate over the rows and scan data into a new instance of book for each row
 	for rows.Next() {
@@ -171,25 +162,20 @@ func (b *BookRepository) CategoryBooks(ctx context.Context, book domain.Book) ([
 	mappedBook := MapBookDomainToBookEntity(book)
 
 	// Dynamically create the query based on the category type
-	if mappedBook.Category.Valid {
+	if mappedBook.Subject.Valid {
 		categoryType = "subject"
 		categoryValue = mappedBook.Subject.String
-	} else if mappedBook.Subject.Valid {
+	} else if mappedBook.Genre.Valid {
 		categoryType = "genre"
 		categoryValue = mappedBook.Genre.String
 	}
 
-	query := "SELECT * FROM books WHERE $1=$2"
-	rows, err := b.db.Query(query, categoryType, categoryValue)
+	query := fmt.Sprintf("SELECT * FROM books WHERE %s=$1", categoryType)
+	rows, err := b.db.Query(query, categoryValue)
 	if err != nil {
 		return []domain.Book{}, err
 	}
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			return
-		}
-	}(rows)
+	defer rows.Close()
 
 	for rows.Next() {
 		var book Book
@@ -212,12 +198,7 @@ func (b *BookRepository) AvailableBooks(ctx context.Context) ([]domain.Book, err
 	if err != nil {
 		return []domain.Book{}, err
 	}
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			return
-		}
-	}(rows)
+	defer rows.Close()
 
 	for rows.Next() {
 		var book Book
