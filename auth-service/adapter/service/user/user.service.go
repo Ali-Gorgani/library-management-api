@@ -26,7 +26,6 @@ func (s *UsersService) GetUserByUsername(ctx context.Context, req domain.Auth) (
 	dtoReq := MapDomainUserToDtoGetUserReq(req)
 	dtoRes, err := s.c.GetUserByUsername(ctx, dtoReq)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to call GetUserByUsername")
 		return domain.User{}, err
 	}
 	return MapDtoUserResToDomainUser(dtoRes), nil

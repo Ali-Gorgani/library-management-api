@@ -84,7 +84,7 @@ func (u *UserRepository) GetUserByUsername(ctx context.Context, user domain.User
 	mappedUser := MapUserDomainToUserEntity(user)
 
 	query := "SELECT * FROM users WHERE username=$1"
-	row := u.db.QueryRow(query, mappedUser.Username)
+	row := u.db.QueryRow(query, mappedUser.Username.String)
 	err := row.Scan(&foundUser.ID, &foundUser.Username, &foundUser.HashedPassword, &foundUser.Email, &foundUser.IsAdmin, &foundUser.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
