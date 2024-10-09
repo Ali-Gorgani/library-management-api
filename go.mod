@@ -1,15 +1,15 @@
 module library-management-api
 
-go 1.23.1
+go 1.23.2
 
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang/protobuf v1.5.4
 	github.com/jackc/pgx/v4 v4.18.3
-	github.com/lib/pq v1.10.2
 	github.com/pressly/goose/v3 v3.22.1
 	github.com/rs/zerolog v1.33.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	golang.org/x/crypto v0.28.0
 	google.golang.org/grpc v1.67.1
@@ -29,6 +29,7 @@ require (
 	github.com/go-playground/validator/v10 v10.20.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
