@@ -1,0 +1,10 @@
+{
+  "psql": {
+    "host": "localhost",
+    "port": "5431",
+    "user": "root",
+    "password": "secret",
+    "database": "library_books_db",
+    "ssl_mode": "disable"
+  }
+}

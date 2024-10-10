@@ -2,8 +2,11 @@ package main
 
 import (
 	"library-management-api/api-gateway/routes"
+	authConfigs "library-management-api/auth-service/configs"
 	authDB "library-management-api/auth-service/init/database"
+	bookConfigs "library-management-api/books-service/configs"
 	bookDB "library-management-api/books-service/init/database"
+	userConfigs "library-management-api/users-service/configs"
 	userDB "library-management-api/users-service/init/database"
 	"net/http"
 	"os"
@@ -15,6 +18,9 @@ import (
 
 func init() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	authConfigs.RunConfig("auth-service")
+	userConfigs.RunConfig("users-service")
+	bookConfigs.RunConfig("books-service")
 	authDB.RunDB()
 	userDB.RunDB()
 	bookDB.RunDB()

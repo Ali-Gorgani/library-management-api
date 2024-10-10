@@ -4,19 +4,12 @@ import (
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"time"
 )
 
-// Config holds the application wide configurations.
+// Config holds the application-wide configurations.
 // The values are read by viper from the config file or environment variables.
 type Config struct {
-	JWT  JWT  `mapstructure:"jwt"`
 	PSQL PSQL `mapstructure:"psql"`
-}
-
-type JWT struct {
-	SecretKey string        `mapstructure:"secret_key"`
-	Duration  time.Duration `mapstructure:"duration"`
 }
 
 // PSQL holds PostgreSQL connection configuration.
@@ -76,10 +69,10 @@ func LoadConfig(path string) (*Config, error) {
 // setDefaults sets default configuration values in viper.
 func setDefaults(v *viper.Viper) {
 	v.SetDefault("psql.host", "localhost")
-	v.SetDefault("psql.port", "5432")
+	v.SetDefault("psql.port", "5430")
 	v.SetDefault("psql.user", "root")
 	v.SetDefault("psql.password", "secret")
-	v.SetDefault("psql.database", "library_auth_db")
+	v.SetDefault("psql.database", "library_users_db")
 	v.SetDefault("psql.ssl_mode", "disable")
 }
 

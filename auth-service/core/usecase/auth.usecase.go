@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"github.com/rs/zerolog/log"
 	"library-management-api/auth-service/adapter/repository"
 	userService "library-management-api/auth-service/adapter/service/user"
 	"library-management-api/auth-service/configs"
@@ -17,18 +16,12 @@ import (
 type AuthUseCase struct {
 	authRepository ports.AuthRepository
 	userService    *userService.UsersService
-	config         configs.Config
 }
 
 func NewAuthUseCase() *AuthUseCase {
-	config, err := configs.LoadConfig("auth-service")
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to load config")
-	}
 	return &AuthUseCase{
 		authRepository: repository.NewAuthRepository(),
 		userService:    userService.NewUserService(),
-		config:         config,
 	}
 }
 
@@ -204,7 +197,7 @@ func (a *AuthUseCase) HashPassword(ctx context.Context, auth domain.Auth) (domai
 
 // CreateToken handles logic for creating a token
 func (a *AuthUseCase) CreateToken(ctx context.Context, auth domain.Auth) (domain.Auth, error) {
-	secretKey := a.config.JWT.SecretKey
+	secretKey := configs.C().JWT.SecretKey
 	userClaims := token.UserClaims{
 		ID:       auth.Claims.ID,
 		Username: auth.Claims.Username,
@@ -238,7 +231,7 @@ func (a *AuthUseCase) CreateToken(ctx context.Context, auth domain.Auth) (domain
 
 // VerifyToken handles logic for verifying a token
 func (a *AuthUseCase) VerifyToken(ctx context.Context, auth domain.Auth) (domain.Auth, error) {
-	secretKey := a.config.JWT.SecretKey
+	secretKey := configs.C().JWT.SecretKey
 	claims, err := token.VerifyToken(auth.AccessToken, secretKey)
 	if err != nil {
 		return domain.Auth{}, errorhandler.ErrInvalidSession

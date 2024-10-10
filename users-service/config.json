@@ -1,0 +1,10 @@
+{
+  "psql": {
+    "host": "localhost",
+    "port": "5430",
+    "user": "root",
+    "password": "secret",
+    "database": "library_users_db",
+    "ssl_mode": "disable"
+  }
+}

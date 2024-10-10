@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/fs"
+	"library-management-api/auth-service/configs"
 	"library-management-api/auth-service/init/migrations"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -21,13 +22,16 @@ type PostgresConfig struct {
 }
 
 func DefaultPostgresConfig() PostgresConfig {
+	// Load the configuration from config file or environment variables
+	dbConfig := configs.C().PSQL
+
 	return PostgresConfig{
-		Host:     "localhost",
-		Port:     "5432",
-		User:     "root",
-		Password: "secret",
-		Database: "library_auth_db",
-		SSLMode:  "disable",
+		Host:     dbConfig.Host,
+		Port:     dbConfig.Port,
+		User:     dbConfig.User,
+		Password: dbConfig.Password,
+		Database: dbConfig.Database,
+		SSLMode:  dbConfig.SSLMode,
 	}
 }
 
@@ -37,13 +41,13 @@ func (cfg PostgresConfig) String() string {
 	)
 }
 
-type postgres struct {
+type Postgres struct {
 	DB *sql.DB
 }
 
-var p *postgres
+var p *Postgres
 
-func P() *postgres {
+func P() *Postgres {
 	return p
 }
 
@@ -52,7 +56,7 @@ func P() *postgres {
 // Caller must ensure that the connection is closed via db.Close() method.
 func Open(cfg PostgresConfig) {
 	var err error
-	p = &postgres{}
+	p = &Postgres{}
 	p.DB, err = sql.Open("pgx", cfg.String())
 	if err != nil {
 		log.Fatal().Err(err).Msg("Open: failed to open database connection")

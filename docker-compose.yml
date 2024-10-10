@@ -1,4 +1,48 @@
 services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    environment:
+      - SERVICE=api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - users-service
+    networks:
+      - library-network
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auth-service
+    environment:
+      - SERVICE=auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - auth-db
+    networks:
+      - library-network
+
+  users-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: users-service
+    environment:
+      - SERVICE=users-service
+      - DATABASE_URL="postgres://root:secret@users-db:5432/library_users_db"
+    ports:
+      - "8082:8082"
+    depends_on:
+      - users-db
+    networks:
+      - library-network
+
   # Database for Users Service
   users-db:
     image: postgres:alpine
@@ -7,8 +51,8 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: library_users_db
-    # volumes:
-    #   - users-db-data:/var/lib/postgresql/data
+    volumes:
+      - users-db-data:/var/lib/postgresql/data
     restart: on-failure
     networks:
       - library-network
@@ -23,8 +67,8 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: library_books_db
-    # volumes:
-    #   - books-db-data:/var/lib/postgresql/data
+    volumes:
+      - books-db-data:/var/lib/postgresql/data
     restart: on-failure
     networks:
       - library-network
@@ -39,8 +83,8 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: library_auth_db
-    # volumes:
-    #   - auth-db-data:/var/lib/postgresql/data
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
     restart: on-failure
     networks:
       - library-network
@@ -50,6 +94,8 @@ services:
 networks:
   library-network:
     driver: bridge
-# volumes:
-#   books-db-data:
-#   users-db-data:
+
+volumes:
+  books-db-data:
+  users-db-data:
+  auth-db-data:

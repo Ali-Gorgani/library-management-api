@@ -3,12 +3,12 @@
     "secret_key": "YbECVX6TtPbIrdHi4VTR67jaxaqiYALM",
     "duration": "15m"
   },
-  "database": {
+  "psql": {
     "host": "localhost",
+    "port": "5432",
     "user": "root",
     "password": "secret",
-    "db_name": "library_auth_db",
-    "port": 3306,
-    "ssl": false
+    "database": "library_auth_db",
+    "ssl_mode": "disable"
   }
 }
